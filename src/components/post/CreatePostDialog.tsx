@@ -11,16 +11,33 @@ import { cn } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const communities = ["philosophy", "technology", "community", "science", "art"]; // This would come from your backend
+// Extended list of communities for better search demonstration
+const communities = [
+  "philosophy",
+  "technology",
+  "community",
+  "science",
+  "art",
+  "law",
+  "medicine",
+  "education",
+  "politics",
+  "gaming"
+];
 
 export function CreatePostDialog() {
   const { communityName } = useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(communityName || "");
+  const [search, setSearch] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const filteredCommunities = communities.filter((community) =>
+    community.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +60,7 @@ export function CreatePostDialog() {
     setTitle("");
     setContent("");
     setValue(communityName || "");
+    setSearch("");
     
     // Navigate to the community where the post was created
     navigate(`/community/${value}`);
@@ -67,23 +85,25 @@ export function CreatePostDialog() {
                   aria-expanded={open}
                   className="w-full justify-between"
                 >
-                  {value
-                    ? communities.find((community) => community === value)
-                    : "Select community..."}
+                  {value || "Select community..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput placeholder="Search community..." className="h-9" />
+                <Command shouldFilter={false}>
+                  <CommandInput 
+                    placeholder="Search community..." 
+                    value={search}
+                    onValueChange={setSearch}
+                  />
                   <CommandEmpty>No community found.</CommandEmpty>
                   <CommandGroup>
-                    {communities.map((community) => (
+                    {filteredCommunities.map((community) => (
                       <CommandItem
                         key={community}
-                        value={community}
-                        onSelect={(currentValue) => {
-                          setValue(currentValue === value ? "" : currentValue);
+                        onSelect={() => {
+                          setValue(community);
+                          setSearch("");
                           setOpen(false);
                         }}
                       >
