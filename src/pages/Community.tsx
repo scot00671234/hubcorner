@@ -2,12 +2,11 @@
 import { useParams } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { PostCard } from "@/components/post/PostCard";
+import { useState } from "react";
 
 const Community = () => {
   const { communityName } = useParams();
-
-  // Mock data - would come from your backend
-  const communityPosts = [
+  const [posts, setPosts] = useState([
     {
       title: "Welcome to " + communityName,
       content: "This is the official welcome post for our community. Please read our guidelines and enjoy your stay!",
@@ -22,7 +21,7 @@ const Community = () => {
       votes: 28,
       comments: 8,
     },
-  ];
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -33,13 +32,13 @@ const Community = () => {
           <p className="text-gray-600 mt-2">Join the conversation in our {communityName} community</p>
         </header>
         <div className="grid gap-6">
-          {communityPosts.map((post, index) => (
+          {posts.map((post, index) => (
             <PostCard key={index} {...post} />
           ))}
         </div>
       </main>
     </div>
   );
-};
+}
 
 export default Community;
