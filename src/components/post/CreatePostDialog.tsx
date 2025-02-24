@@ -70,9 +70,9 @@ export function CreatePostDialog() {
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
+              <PopoverContent className="w-[200px] p-0">
                 <Command>
-                  <CommandInput placeholder="Search community..." />
+                  <CommandInput placeholder="Search community..." className="h-9" />
                   <CommandEmpty>No community found.</CommandEmpty>
                   <CommandGroup>
                     {communities.map((community) => (
@@ -80,7 +80,7 @@ export function CreatePostDialog() {
                         key={community}
                         value={community}
                         onSelect={(currentValue) => {
-                          setValue(currentValue);
+                          setValue(currentValue === value ? "" : currentValue);
                           setOpen(false);
                         }}
                       >
