@@ -25,6 +25,11 @@ export function CreatePostDialog() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!value) {
+      toast.error("Please select a community");
+      return;
+    }
+    
     // Here you would handle the post creation with your backend
     console.log({ title, content, community: value });
     
@@ -39,10 +44,8 @@ export function CreatePostDialog() {
     setContent("");
     setValue(communityName || "");
     
-    // If we're not already in the selected community, navigate there
-    if (communityName !== value) {
-      navigate(`/community/${value}`);
-    }
+    // Navigate to the community where the post was created
+    navigate(`/community/${value}`);
   };
 
   return (
