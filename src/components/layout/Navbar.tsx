@@ -2,6 +2,7 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CreatePostDialog } from "@/components/post/CreatePostDialog";
 
 export function Navbar() {
   return (
@@ -22,7 +23,7 @@ export function Navbar() {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost">Create Post</Button>
+            <CreatePostDialog />
             <Button>Join Community</Button>
           </div>
         </div>

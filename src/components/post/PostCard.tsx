@@ -2,6 +2,7 @@
 import { ArrowUp, ArrowDown, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 interface PostCardProps {
   title: string;
@@ -26,10 +27,12 @@ export function PostCard({ title, content, community, votes, comments }: PostCar
         </div>
         <div className="p-4 flex-1">
           <div className="text-sm text-muted-foreground mb-2">
-            Posted in <a href="#" className="text-accent hover:underline">{community}</a>
+            Posted in <Link to={`/community/${community}`} className="text-accent hover:underline">{community}</Link>
           </div>
-          <h3 className="text-lg font-semibold mb-2 line-clamp-2">{title}</h3>
-          <p className="text-gray-600 line-clamp-3 mb-4">{content}</p>
+          <Link to={`/post/123`} className="block group">
+            <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">{title}</h3>
+            <p className="text-gray-600 line-clamp-3 mb-4">{content}</p>
+          </Link>
           <div className="flex items-center text-sm text-gray-500">
             <Button variant="ghost" size="sm" className="hover:text-accent">
               <MessageCircle className="h-4 w-4 mr-2" />
