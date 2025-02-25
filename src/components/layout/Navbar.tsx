@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CreatePostDialog } from "@/components/post/CreatePostDialog";
 import { 
+  Command,
   CommandDialog, 
   CommandEmpty, 
   CommandGroup, 
@@ -82,65 +83,67 @@ export function Navbar() {
       </nav>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput 
-          placeholder="Search posts, communities, and comments..." 
-          value={search}
-          onValueChange={setSearch}
-        />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          {filteredPosts.length > 0 && (
-            <CommandGroup heading="Posts">
-              {filteredPosts.map((post) => (
-                <CommandItem
-                  key={post.id}
-                  onSelect={() => {
-                    navigate(`/post/${post.id}`);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  <span>{post.title}</span>
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    in {post.community}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-          {filteredCommunities.length > 0 && (
-            <CommandGroup heading="Communities">
-              {filteredCommunities.map((community) => (
-                <CommandItem
-                  key={community}
-                  onSelect={() => {
-                    navigate(`/community/${community}`);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  {community}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-          {filteredComments.length > 0 && (
-            <CommandGroup heading="Comments">
-              {filteredComments.map((comment) => (
-                <CommandItem
-                  key={comment.id}
-                  onSelect={() => {
-                    navigate(`/post/${comment.postId}`);
-                    setOpen(false);
-                    setSearch("");
-                  }}
-                >
-                  {comment.content}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          )}
-        </CommandList>
+        <Command>
+          <CommandInput 
+            placeholder="Search posts, communities, and comments..." 
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            {filteredPosts.length > 0 && (
+              <CommandGroup heading="Posts">
+                {filteredPosts.map((post) => (
+                  <CommandItem
+                    key={post.id}
+                    onSelect={() => {
+                      navigate(`/post/${post.id}`);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    <span>{post.title}</span>
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      in {post.community}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            {filteredCommunities.length > 0 && (
+              <CommandGroup heading="Communities">
+                {filteredCommunities.map((community) => (
+                  <CommandItem
+                    key={community}
+                    onSelect={() => {
+                      navigate(`/community/${community}`);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    {community}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            {filteredComments.length > 0 && (
+              <CommandGroup heading="Comments">
+                {filteredComments.map((comment) => (
+                  <CommandItem
+                    key={comment.id}
+                    onSelect={() => {
+                      navigate(`/post/${comment.postId}`);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    {comment.content}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
       </CommandDialog>
     </>
   );
