@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -111,27 +111,29 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
                     value={search}
                     onValueChange={setSearch}
                   />
-                  <CommandEmpty>No community found.</CommandEmpty>
-                  <CommandGroup>
-                    {filteredCommunities.map((community) => (
-                      <CommandItem
-                        key={community}
-                        onSelect={() => {
-                          setValue(community);
-                          setSearch("");
-                          setOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === community ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {community}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
+                  <CommandList>
+                    <CommandEmpty>No community found.</CommandEmpty>
+                    <CommandGroup>
+                      {filteredCommunities.map((community) => (
+                        <CommandItem
+                          key={community}
+                          onSelect={() => {
+                            setValue(community);
+                            setSearch("");
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              value === community ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {community}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
                 </Command>
               </PopoverContent>
             </Popover>
