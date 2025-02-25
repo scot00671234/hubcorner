@@ -10,6 +10,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import type { Post } from "@/pages/Community";
 
 // Extended list of communities for better search demonstration
 const communities = [
@@ -25,7 +26,11 @@ const communities = [
   "gaming"
 ];
 
-export function CreatePostDialog() {
+interface CreatePostDialogProps {
+  onPostCreated?: (post: Post) => void;
+}
+
+export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
   const { communityName } = useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -47,8 +52,18 @@ export function CreatePostDialog() {
       return;
     }
     
-    // Here you would handle the post creation with your backend
-    console.log({ title, content, community: value });
+    const newPost: Post = {
+      title,
+      content,
+      community: value,
+      votes: 0,
+      comments: 0
+    };
+    
+    // Call the onPostCreated callback if it exists
+    if (onPostCreated) {
+      onPostCreated(newPost);
+    }
     
     // Show success message
     toast.success("Post created successfully!");
@@ -90,7 +105,7 @@ export function CreatePostDialog() {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[200px] p-0">
-                <Command shouldFilter={false}>
+                <Command>
                   <CommandInput 
                     placeholder="Search community..." 
                     value={search}
