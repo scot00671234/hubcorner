@@ -1,32 +1,144 @@
 
+import { useState } from "react";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CreatePostDialog } from "@/components/post/CreatePostDialog";
+import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { useNavigate } from "react-router-dom";
+
+// This would come from your backend in a real application
+const mockData = {
+  posts: [
+    { id: "123", title: "The Beauty of Anonymous Discussions", community: "philosophy" },
+    { id: "124", title: "Tips for Meaningful Online Conversations", community: "community" },
+    { id: "125", title: "The Future of Anonymous Social Platforms", community: "technology" },
+  ],
+  communities: [
+    "philosophy",
+    "technology",
+    "community",
+    "science",
+    "art",
+    "law",
+    "medicine",
+    "education",
+  ],
+  comments: [
+    { id: "1", content: "Great perspective on anonymity!", postId: "123" },
+    { id: "2", content: "This really helped me understand better", postId: "124" },
+    { id: "3", content: "Interesting take on the future", postId: "125" },
+  ],
+};
 
 export function Navbar() {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+
+  const filteredPosts = mockData.posts.filter((post) =>
+    post.title.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredCommunities = mockData.communities.filter((community) =>
+    community.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredComments = mockData.comments.filter((comment) =>
+    comment.content.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
-      <div className="container mx-auto px-4">
-        <div className="h-16 flex items-center justify-between">
-          <a href="/" className="text-2xl font-bold text-primary hover:text-accent transition-colors">
-            anoniverse
-          </a>
-          <div className="flex-1 max-w-xl mx-4">
-            <div className="relative">
-              <Input
-                type="search"
-                placeholder="Search posts, comments..."
-                className="w-full pl-10"
-              />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="h-16 flex items-center justify-between">
+            <a href="/" className="text-2xl font-bold text-primary hover:text-accent transition-colors">
+              anoniverse
+            </a>
+            <div className="flex-1 max-w-xl mx-4">
+              <div className="relative">
+                <Input
+                  type="search"
+                  placeholder="Search posts, comments..."
+                  className="w-full pl-10"
+                  onClick={() => setOpen(true)}
+                  readOnly
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <CreatePostDialog />
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <CreatePostDialog />
-          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput 
+          placeholder="Search posts, communities, and comments..." 
+          value={search}
+          onValueChange={setSearch}
+        />
+        {search.length > 0 ? (
+          <>
+            <CommandEmpty>No results found.</CommandEmpty>
+            {filteredPosts.length > 0 && (
+              <CommandGroup heading="Posts">
+                {filteredPosts.map((post) => (
+                  <CommandItem
+                    key={post.id}
+                    onSelect={() => {
+                      navigate(`/post/${post.id}`);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    <span>{post.title}</span>
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      in {post.community}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            {filteredCommunities.length > 0 && (
+              <CommandGroup heading="Communities">
+                {filteredCommunities.map((community) => (
+                  <CommandItem
+                    key={community}
+                    onSelect={() => {
+                      navigate(`/community/${community}`);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    {community}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+            {filteredComments.length > 0 && (
+              <CommandGroup heading="Comments">
+                {filteredComments.map((comment) => (
+                  <CommandItem
+                    key={comment.id}
+                    onSelect={() => {
+                      navigate(`/post/${comment.postId}`);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    {comment.content}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </>
+        ) : (
+          <CommandEmpty>Start typing to search...</CommandEmpty>
+        )}
+      </CommandDialog>
+    </>
   );
 }
