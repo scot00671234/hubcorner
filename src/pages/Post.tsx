@@ -6,13 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowUp, ArrowDown, MessageCircle, Send } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+
+type VoteType = "up" | "down" | null;
+
+interface VoteState {
+  [key: string]: VoteType;
+}
 
 const Post = () => {
   const { postId } = useParams();
   const [comment, setComment] = useState("");
+  const [votes, setVotes] = useState<VoteState>({});
 
   // Mock data - would come from your backend
   const post = {
+    id: "main-post",
     title: "Sample Post Title",
     content: "This is a detailed post content that would be fetched from the backend based on the postId...",
     community: "technology",
@@ -33,11 +42,80 @@ const Post = () => {
     ],
   };
 
+  const [voteScores, setVoteScores] = useState({
+    "main-post": post.votes,
+    "1": post.comments[0].votes,
+    "2": post.comments[0].replies[0].votes,
+  });
+
+  const handleVote = (itemId: string, voteType: VoteType) => {
+    const currentVote = votes[itemId];
+    
+    // If clicking the same vote button, remove the vote
+    if (currentVote === voteType) {
+      setVotes(prev => {
+        const newVotes = { ...prev };
+        delete newVotes[itemId];
+        return newVotes;
+      });
+      setVoteScores(prev => ({
+        ...prev,
+        [itemId]: prev[itemId] + (voteType === 'up' ? -1 : 1)
+      }));
+      return;
+    }
+
+    // Update vote state
+    setVotes(prev => ({
+      ...prev,
+      [itemId]: voteType
+    }));
+
+    // Update score
+    setVoteScores(prev => ({
+      ...prev,
+      [itemId]: prev[itemId] + (
+        voteType === 'up' ? 
+          (currentVote === 'down' ? 2 : 1) : 
+          (currentVote === 'up' ? -2 : -1)
+      )
+    }));
+
+    // Show feedback
+    toast.success(
+      voteType === 'up' ? 
+        (currentVote === 'up' ? 'Upvote removed' : 'Upvoted!') :
+        (currentVote === 'down' ? 'Downvote removed' : 'Downvoted!')
+    );
+  };
+
   const handleComment = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("New comment:", comment);
     setComment("");
   };
+
+  const VoteButtons = ({ itemId }: { itemId: string }) => (
+    <div className="flex flex-col items-center py-4 px-2 bg-secondary">
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`h-6 w-6 ${votes[itemId] === 'up' ? 'text-accent' : ''}`}
+        onClick={() => handleVote(itemId, 'up')}
+      >
+        <ArrowUp className="h-4 w-4" />
+      </Button>
+      <span className="text-sm font-medium my-1">{voteScores[itemId]}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`h-6 w-6 ${votes[itemId] === 'down' ? 'text-accent' : ''}`}
+        onClick={() => handleVote(itemId, 'down')}
+      >
+        <ArrowDown className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -45,15 +123,7 @@ const Post = () => {
       <main className="container mx-auto px-4 pt-24 pb-12">
         <Card className="mb-6">
           <div className="flex">
-            <div className="flex flex-col items-center py-4 px-2 bg-secondary">
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium my-1">{post.votes}</span>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <ArrowDown className="h-4 w-4" />
-              </Button>
-            </div>
+            <VoteButtons itemId="main-post" />
             <div className="p-6 flex-1">
               <div className="text-sm text-muted-foreground mb-2">
                 Posted in <a href={`/community/${post.community}`} className="text-accent hover:underline">{post.community}</a>
@@ -82,15 +152,7 @@ const Post = () => {
           {post.comments.map((comment) => (
             <Card key={comment.id} className="p-4">
               <div className="flex items-start gap-2">
-                <div className="flex flex-col items-center">
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm">{comment.votes}</span>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                </div>
+                <VoteButtons itemId={comment.id.toString()} />
                 <div className="flex-1">
                   <p className="text-gray-600 mb-2">{comment.content}</p>
                   <Button variant="ghost" size="sm" className="text-xs">
@@ -103,15 +165,7 @@ const Post = () => {
                 <div className="ml-8 mt-4 space-y-4 border-l-2 border-gray-100 pl-4">
                   {comment.replies.map((reply) => (
                     <div key={reply.id} className="flex items-start gap-2">
-                      <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                          <ArrowUp className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm">{reply.votes}</span>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <VoteButtons itemId={reply.id.toString()} />
                       <div className="flex-1">
                         <p className="text-gray-600">{reply.content}</p>
                       </div>
