@@ -13,6 +13,7 @@ import {
   CommandList
 } from "@/components/ui/command";
 import { useNavigate } from "react-router-dom";
+import type { Post } from "@/pages/Community";
 
 // This would come from your backend in a real application
 const mockData = {
@@ -38,7 +39,11 @@ const mockData = {
   ],
 };
 
-export function Navbar() {
+interface NavbarProps {
+  onPostCreated?: (post: Post) => void;
+}
+
+export function Navbar({ onPostCreated }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
@@ -76,7 +81,7 @@ export function Navbar() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <CreatePostDialog />
+              <CreatePostDialog onPostCreated={onPostCreated} />
             </div>
           </div>
         </div>

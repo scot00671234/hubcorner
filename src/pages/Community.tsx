@@ -38,7 +38,7 @@ const Community = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <Navbar onPostCreated={handleNewPost} />
       <main className="container mx-auto px-4 pt-24 pb-12">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 capitalize">{communityName}</h1>
