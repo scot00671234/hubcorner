@@ -3,7 +3,14 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CreatePostDialog } from "@/components/post/CreatePostDialog";
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { 
+  CommandDialog, 
+  CommandEmpty, 
+  CommandGroup, 
+  CommandInput, 
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
 import { useNavigate } from "react-router-dom";
 
 // This would come from your backend in a real application
@@ -35,17 +42,17 @@ export function Navbar() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  const filteredPosts = mockData.posts.filter((post) =>
+  const filteredPosts = search ? mockData.posts.filter((post) =>
     post.title.toLowerCase().includes(search.toLowerCase())
-  );
+  ) : [];
 
-  const filteredCommunities = mockData.communities.filter((community) =>
+  const filteredCommunities = search ? mockData.communities.filter((community) =>
     community.toLowerCase().includes(search.toLowerCase())
-  );
+  ) : [];
 
-  const filteredComments = mockData.comments.filter((comment) =>
+  const filteredComments = search ? mockData.comments.filter((comment) =>
     comment.content.toLowerCase().includes(search.toLowerCase())
-  );
+  ) : [];
 
   return (
     <>
@@ -80,64 +87,60 @@ export function Navbar() {
           value={search}
           onValueChange={setSearch}
         />
-        {search.length > 0 ? (
-          <>
-            <CommandEmpty>No results found.</CommandEmpty>
-            {filteredPosts.length > 0 && (
-              <CommandGroup heading="Posts">
-                {filteredPosts.map((post) => (
-                  <CommandItem
-                    key={post.id}
-                    onSelect={() => {
-                      navigate(`/post/${post.id}`);
-                      setOpen(false);
-                      setSearch("");
-                    }}
-                  >
-                    <span>{post.title}</span>
-                    <span className="ml-2 text-sm text-muted-foreground">
-                      in {post.community}
-                    </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-            {filteredCommunities.length > 0 && (
-              <CommandGroup heading="Communities">
-                {filteredCommunities.map((community) => (
-                  <CommandItem
-                    key={community}
-                    onSelect={() => {
-                      navigate(`/community/${community}`);
-                      setOpen(false);
-                      setSearch("");
-                    }}
-                  >
-                    {community}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-            {filteredComments.length > 0 && (
-              <CommandGroup heading="Comments">
-                {filteredComments.map((comment) => (
-                  <CommandItem
-                    key={comment.id}
-                    onSelect={() => {
-                      navigate(`/post/${comment.postId}`);
-                      setOpen(false);
-                      setSearch("");
-                    }}
-                  >
-                    {comment.content}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-          </>
-        ) : (
-          <CommandEmpty>Start typing to search...</CommandEmpty>
-        )}
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          {filteredPosts.length > 0 && (
+            <CommandGroup heading="Posts">
+              {filteredPosts.map((post) => (
+                <CommandItem
+                  key={post.id}
+                  onSelect={() => {
+                    navigate(`/post/${post.id}`);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  <span>{post.title}</span>
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    in {post.community}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {filteredCommunities.length > 0 && (
+            <CommandGroup heading="Communities">
+              {filteredCommunities.map((community) => (
+                <CommandItem
+                  key={community}
+                  onSelect={() => {
+                    navigate(`/community/${community}`);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  {community}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {filteredComments.length > 0 && (
+            <CommandGroup heading="Comments">
+              {filteredComments.map((comment) => (
+                <CommandItem
+                  key={comment.id}
+                  onSelect={() => {
+                    navigate(`/post/${comment.postId}`);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  {comment.content}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+        </CommandList>
       </CommandDialog>
     </>
   );
