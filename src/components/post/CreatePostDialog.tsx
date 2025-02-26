@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import type { Post } from "@/pages/Community";
 
@@ -33,12 +33,20 @@ interface CreatePostDialogProps {
 export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
   const { communityName } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");  // Remove default value to force community selection
+  const [value, setValue] = useState(communityName || "");
   const [search, setSearch] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Update value when communityName changes
+  useEffect(() => {
+    if (communityName) {
+      setValue(communityName);
+    }
+  }, [communityName]);
 
   const filteredCommunities = communities.filter((community) =>
     community.toLowerCase().includes(search.toLowerCase())
@@ -74,11 +82,14 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
     // Reset form
     setTitle("");
     setContent("");
-    setValue("");  // Reset the community selection
+    setValue("");
     setSearch("");
     
     // Navigate to the community where the post was created
-    navigate(`/community/${value}`);
+    // Only navigate if we're not already in a community page
+    if (!location.pathname.startsWith('/community/')) {
+      navigate(`/community/${value}`);
+    }
   };
 
   return (
