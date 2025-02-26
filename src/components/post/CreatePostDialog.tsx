@@ -34,7 +34,7 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
   const { communityName } = useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(communityName || "");
+  const [value, setValue] = useState("");  // Remove default value to force community selection
   const [search, setSearch] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -74,7 +74,7 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
     // Reset form
     setTitle("");
     setContent("");
-    setValue(communityName || "");
+    setValue("");  // Reset the community selection
     setSearch("");
     
     // Navigate to the community where the post was created
