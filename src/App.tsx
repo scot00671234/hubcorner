@@ -30,7 +30,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index onPostCreated={handleNewPost} />} />
+            <Route path="/" element={<Index />} />
             <Route 
               path="/community/:communityName" 
               element={<Community 
@@ -38,10 +38,7 @@ const App = () => {
                 onPostCreated={handleNewPost} 
               />} 
             />
-            <Route 
-              path="/post/:postId" 
-              element={<Post onPostCreated={handleNewPost} />} 
-            />
+            <Route path="/post/:postId" element={<Post />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

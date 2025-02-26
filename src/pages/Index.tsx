@@ -1,14 +1,9 @@
 import { Navbar } from "@/components/layout/Navbar";
-import type { Post } from "./Community";
 
-interface IndexProps {
-  onPostCreated: (post: Post) => void;
-}
-
-const Index = ({ onPostCreated }: IndexProps) => {
+const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar onPostCreated={onPostCreated} />
+      <Navbar />
       <main className="container mx-auto px-4 pt-24 pb-12">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome to anoniverse</h1>
