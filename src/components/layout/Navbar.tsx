@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { CreatePostDialog } from "@/components/post/CreatePostDialog";
 import { 
   Command,
   CommandDialog, 
@@ -39,11 +38,7 @@ const mockData = {
   ],
 };
 
-interface NavbarProps {
-  onPostCreated?: (post: Post) => void;
-}
-
-export function Navbar({ onPostCreated }: NavbarProps) {
+export function Navbar() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
@@ -79,9 +74,6 @@ export function Navbar({ onPostCreated }: NavbarProps) {
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <CreatePostDialog onPostCreated={onPostCreated} />
             </div>
           </div>
         </div>
