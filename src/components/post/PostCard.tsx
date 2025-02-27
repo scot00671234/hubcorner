@@ -1,10 +1,11 @@
 
-import { ArrowUp, ArrowDown, MessageCircle } from "lucide-react";
+import { ArrowUp, ArrowDown, MessageSquare } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface PostCardProps {
+  id: string;
   title: string;
   content: string;
   community: string;
@@ -12,35 +13,46 @@ interface PostCardProps {
   comments: number;
 }
 
-export function PostCard({ title, content, community, votes, comments }: PostCardProps) {
+export function PostCard({ id, title, content, community, votes, comments }: PostCardProps) {
+  const navigate = useNavigate();
+
+  // Create a preview of content
+  const contentPreview = content.length > 150 ? `${content.slice(0, 150)}...` : content;
+
+  const handleClick = () => {
+    navigate(`/post/${id}`);
+  };
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow animate-fade-in">
-      <div className="flex">
-        <div className="flex flex-col items-center py-4 px-2 bg-secondary">
-          <Button variant="ghost" size="icon" className="h-6 w-6">
-            <ArrowUp className="h-4 w-4" />
-          </Button>
-          <span className="text-sm font-medium my-1">{votes}</span>
-          <Button variant="ghost" size="icon" className="h-6 w-6">
-            <ArrowDown className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="p-4 flex-1">
-          <div className="text-sm text-muted-foreground mb-2">
-            Posted in <Link to={`/community/${community}`} className="text-accent hover:underline">{community}</Link>
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleClick}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl">{title}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Posted in {community}
+            </p>
           </div>
-          <Link to={`/post/123`} className="block group">
-            <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-accent transition-colors">{title}</h3>
-            <p className="text-gray-600 line-clamp-3 mb-4">{content}</p>
-          </Link>
-          <div className="flex items-center text-sm text-gray-500">
-            <Button variant="ghost" size="sm" className="hover:text-accent">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              {comments} Comments
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-gray-700 mb-4">{contentPreview}</p>
+        <div className="flex items-center gap-4 text-gray-500">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => e.stopPropagation()}>
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <span>{votes}</span>
+            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => e.stopPropagation()}>
+              <ArrowDown className="h-4 w-4" />
             </Button>
           </div>
+          <div className="flex items-center gap-1">
+            <MessageSquare className="h-4 w-4" />
+            <span>{comments}</span>
+          </div>
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 }

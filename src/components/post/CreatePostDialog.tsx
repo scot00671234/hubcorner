@@ -1,175 +1,123 @@
 
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import type { Post } from "@/pages/Community";
 
-// Extended list of communities for better search demonstration
-const communities = [
-  "philosophy",
-  "technology",
-  "community",
-  "science",
-  "art",
-  "law",
-  "medicine",
-  "education",
-  "politics",
-  "gaming"
-];
-
 interface CreatePostDialogProps {
-  onPostCreated?: (post: Post) => void;
+  onPostCreated: (post: Post) => void;
 }
 
 export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
-  const { communityName } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(communityName || "");
-  const [search, setSearch] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
-  // Update value when communityName changes
-  useEffect(() => {
-    if (communityName) {
-      setValue(communityName);
-    }
-  }, [communityName]);
-
-  const filteredCommunities = communities.filter((community) =>
-    community.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!value) {
-      toast.error("Please select a community");
+  const handleSubmit = () => {
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter both a title and content.",
+        variant: "destructive",
+      });
       return;
     }
-    
-    const newPost: Post = {
+
+    // Get the community name from URL
+    const communityName = window.location.pathname.split('/').pop() || "";
+
+    const newPost: Post & { id: string; author: string; comments: any[] } = {
+      id: Date.now().toString(),
       title,
       content,
-      community: value,
+      community: communityName,
       votes: 0,
-      comments: 0
+      comments: 0,
+      author: "anonymous",
+      comments: []
     };
-    
-    // Call the onPostCreated callback if it exists
-    if (onPostCreated) {
-      onPostCreated(newPost);
-    }
-    
-    // Show success message
-    toast.success("Post created successfully!");
-    
-    // Close the dialog
-    setDialogOpen(false);
-    
-    // Reset form
+
+    // Save post to localStorage
+    const storedPosts = localStorage.getItem('posts');
+    const existingPosts = storedPosts ? JSON.parse(storedPosts) : {};
+    existingPosts[newPost.id] = newPost;
+    localStorage.setItem('posts', JSON.stringify(existingPosts));
+
+    onPostCreated(newPost);
     setTitle("");
     setContent("");
-    setValue("");
-    setSearch("");
-    
-    // Navigate to the community where the post was created
-    // Only navigate if we're not already in a community page
-    if (!location.pathname.startsWith('/community/')) {
-      navigate(`/community/${value}`);
-    }
+    setOpen(false);
+
+    toast({
+      title: "Success",
+      description: "Post created successfully!",
+    });
+
+    // Navigate to the new post
+    navigate(`/post/${newPost.id}`);
   };
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost">Create Post</Button>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Post
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create a New Post</DialogTitle>
+          <DialogDescription>
+            Share your thoughts with the community
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className="w-full justify-between"
-                >
-                  {value || "Select community..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput 
-                    placeholder="Search community..." 
-                    value={search}
-                    onValueChange={setSearch}
-                  />
-                  <CommandList>
-                    <CommandEmpty>No community found.</CommandEmpty>
-                    <CommandGroup>
-                      {filteredCommunities.map((community) => (
-                        <CommandItem
-                          key={community}
-                          onSelect={() => {
-                            setValue(community);
-                            setSearch("");
-                            setOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              value === community ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {community}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="space-y-2">
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="title" className="text-right">
+              Title
+            </Label>
             <Input
-              placeholder="Post title"
+              id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required
+              className="col-span-3"
             />
           </div>
-          <div className="space-y-2">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="content" className="text-right">
+              Content
+            </Label>
             <Textarea
-              placeholder="Write your post content here..."
+              id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              required
-              className="min-h-[200px]"
+              className="col-span-3"
+              rows={5}
             />
           </div>
-          <div className="flex justify-end">
-            <Button type="submit">Post</Button>
-          </div>
-        </form>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit}>Submit</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
