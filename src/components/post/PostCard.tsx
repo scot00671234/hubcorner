@@ -24,6 +24,11 @@ export function PostCard({ id, title, content, community, votes, comments, userV
     navigate(`/post/${id}`);
   };
 
+  const handleCommunityClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the card click
+    navigate(`/community/${community}`);
+  };
+
   const handleVote = (e: React.MouseEvent, direction: 'up' | 'down') => {
     e.stopPropagation();
     
@@ -76,7 +81,10 @@ export function PostCard({ id, title, content, community, votes, comments, userV
           <div>
             <CardTitle className="text-xl">{title}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Posted in {community}
+              Posted in <button 
+                className="text-blue-500 hover:underline font-medium"
+                onClick={handleCommunityClick}
+              >{community}</button>
             </p>
           </div>
         </div>

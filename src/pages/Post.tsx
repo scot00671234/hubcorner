@@ -142,6 +142,12 @@ const Post = () => {
     setLoading(false);
   }, [postId, navigate, toast]);
 
+  const handleCommunityClick = () => {
+    if (post) {
+      navigate(`/community/${post.community}`);
+    }
+  };
+
   const handleVote = (direction: "up" | "down") => {
     if (!post) return;
 
@@ -408,7 +414,10 @@ const Post = () => {
           <CardHeader>
             <CardTitle>{post.title}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Posted in {post.community} by {post.author}
+              Posted in <button 
+                className="text-blue-500 hover:underline font-medium"
+                onClick={handleCommunityClick}
+              >{post.community}</button> by {post.author}
             </p>
           </CardHeader>
           <CardContent>
