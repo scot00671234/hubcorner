@@ -41,15 +41,16 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
     // Get the community name from URL
     const communityName = window.location.pathname.split('/').pop() || "";
 
-    const newPost: Post & { id: string; author: string; comments: any[] } = {
+    const newPost = {
       id: Date.now().toString(),
       title,
       content,
       community: communityName,
       votes: 0,
-      comments: 0,
+      comments: 0, // This is the comment count
+      commentCount: 0, // This matches the Post page's schema
       author: "anonymous",
-      comments: []
+      comments: [] // This is the array of comments
     };
 
     // Save post to localStorage

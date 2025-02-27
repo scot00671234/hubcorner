@@ -18,8 +18,13 @@ interface Comment {
   replies: Comment[];
 }
 
-interface FullPost extends PostType {
+interface FullPost {
   id: string;
+  title: string;
+  content: string;
+  community: string;
+  votes: number;
+  commentCount: number; // Renamed to avoid conflict with comments array
   author: string;
   comments: Comment[];
 }
@@ -32,7 +37,7 @@ const mockPosts: Record<string, FullPost> = {
     content: "In today's digital age, anonymous discussions provide a unique space for honest dialogue. When identities are masked, people often feel more comfortable sharing their genuine thoughts and experiences.",
     author: "anonymous",
     votes: 42,
-    comments: 1,
+    commentCount: 1,
     community: "philosophy",
     comments: [
       {
@@ -51,7 +56,24 @@ const mockPosts: Record<string, FullPost> = {
 const getStoredPosts = (): Record<string, FullPost> => {
   const storedPosts = localStorage.getItem('posts');
   const parsedPosts = storedPosts ? JSON.parse(storedPosts) : {};
-  return { ...mockPosts, ...parsedPosts };
+  
+  // Convert any post format to FullPost format
+  const convertedPosts: Record<string, FullPost> = {};
+  
+  Object.entries(parsedPosts).forEach(([key, value]: [string, any]) => {
+    convertedPosts[key] = {
+      id: value.id,
+      title: value.title,
+      content: value.content,
+      community: value.community,
+      votes: value.votes,
+      commentCount: typeof value.comments === 'number' ? value.comments : 0,
+      author: value.author || 'anonymous',
+      comments: Array.isArray(value.comments) ? value.comments : []
+    };
+  });
+  
+  return { ...mockPosts, ...convertedPosts };
 };
 
 // Function to store posts in localStorage
@@ -170,7 +192,7 @@ const Post = () => {
     const updatedPost = { 
       ...post, 
       comments: newComments,
-      comments: post.comments + 1 
+      commentCount: post.commentCount + 1 
     };
     allPosts[post.id] = updatedPost;
     storePosts(allPosts);

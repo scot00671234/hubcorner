@@ -52,7 +52,7 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
     const propCommunityPosts = posts[communityName] || [];
     
     // Merge posts from both sources, avoiding duplicates using post ID
-    const uniquePosts = [...propCommunityPosts, ...filteredPosts];
+    const uniquePosts = [...propCommunityPosts, ...filteredPosts] as FullPost[];
     
     setCommunityPosts(uniquePosts);
   }, [communityName, posts]);
@@ -63,7 +63,9 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
 
   const handlePostCreated = (post: Post) => {
     // Update the component state with the new post
-    setCommunityPosts((prev) => [...prev, post as FullPost]);
+    if ('id' in post && 'author' in post) {
+      setCommunityPosts((prev) => [...prev, post as FullPost]);
+    }
     
     // Call the parent onPostCreated function
     onPostCreated(post);
