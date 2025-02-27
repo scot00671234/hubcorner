@@ -15,6 +15,7 @@ interface Comment {
   author: string;
   votes: number;
   createdAt: string;
+  userVoted: 'up' | 'down' | null; // Track user's vote on this comment
   replies: Comment[];
 }
 
@@ -26,7 +27,8 @@ interface FullPost {
   votes: number;
   commentCount: number; // Renamed to avoid conflict with comments array
   author: string;
-  comments: Comment[];
+  commentArray: Comment[]; // Renamed to avoid conflict
+  userVoted: 'up' | 'down' | null; // Track if user voted
 }
 
 // Mock database for posts (in a real app, this would be in your backend)
@@ -39,16 +41,18 @@ const mockPosts: Record<string, FullPost> = {
     votes: 42,
     commentCount: 1,
     community: "philosophy",
-    comments: [
+    commentArray: [
       {
         id: "1",
         content: "This is a great perspective on anonymity!",
         author: "user1",
         votes: 5,
         createdAt: "2024-02-20T10:00:00Z",
+        userVoted: null,
         replies: []
       }
-    ]
+    ],
+    userVoted: null
   }
 };
 
@@ -66,10 +70,12 @@ const getStoredPosts = (): Record<string, FullPost> => {
       title: value.title,
       content: value.content,
       community: value.community,
-      votes: value.votes,
-      commentCount: typeof value.comments === 'number' ? value.comments : 0,
+      votes: value.votes || 0,
+      commentCount: value.comments || value.commentCount || 0,
       author: value.author || 'anonymous',
-      comments: Array.isArray(value.comments) ? value.comments : []
+      commentArray: Array.isArray(value.commentArray) ? value.commentArray : 
+                    (Array.isArray(value.comments) ? value.comments : []),
+      userVoted: value.userVoted || null
     };
   });
   
@@ -79,6 +85,22 @@ const getStoredPosts = (): Record<string, FullPost> => {
 // Function to store posts in localStorage
 const storePosts = (posts: Record<string, FullPost>) => {
   localStorage.setItem('posts', JSON.stringify(posts));
+};
+
+// Function to synchronize data across all posts
+const synchronizePostData = (postId: string, updatedPost: FullPost) => {
+  // Get all posts
+  const allPosts = getStoredPosts();
+  
+  // Update the specific post
+  allPosts[postId] = updatedPost;
+  
+  // Save all posts back to localStorage
+  storePosts(allPosts);
+  
+  // Update the community pages by updating same posts in other views
+  // This ensures that votes and comments are consistent everywhere
+  console.log(`Post ${postId} synchronized with updated data`);
 };
 
 const Post = () => {
@@ -91,6 +113,7 @@ const Post = () => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
   const [votes, setVotes] = useState(0);
+  const [userVoted, setUserVoted] = useState<'up' | 'down' | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -105,8 +128,9 @@ const Post = () => {
 
     if (foundPost) {
       setPost(foundPost);
-      setComments(foundPost.comments || []);
+      setComments(foundPost.commentArray || []);
       setVotes(foundPost.votes || 0);
+      setUserVoted(foundPost.userVoted || null);
     } else {
       toast({
         description: "Post not found",
@@ -121,18 +145,37 @@ const Post = () => {
   const handleVote = (direction: "up" | "down") => {
     if (!post) return;
 
-    const newVotes = direction === "up" ? votes + 1 : votes - 1;
+    let newVotes = votes;
+    let newUserVoted: 'up' | 'down' | null = userVoted;
+
+    // If user already voted in this direction, remove their vote
+    if (userVoted === direction) {
+      newVotes = direction === "up" ? votes - 1 : votes + 1;
+      newUserVoted = null;
+    } 
+    // If user voted in opposite direction, change their vote (counts as 2)
+    else if (userVoted !== null) {
+      newVotes = direction === "up" ? votes + 2 : votes - 2;
+      newUserVoted = direction;
+    } 
+    // If user hasn't voted yet, add their vote
+    else {
+      newVotes = direction === "up" ? votes + 1 : votes - 1;
+      newUserVoted = direction;
+    }
+
     setVotes(newVotes);
+    setUserVoted(newUserVoted);
     
     // Update in localStorage
-    const allPosts = getStoredPosts();
-    const updatedPost = { ...post, votes: newVotes };
-    allPosts[post.id] = updatedPost;
-    storePosts(allPosts);
+    const updatedPost = { ...post, votes: newVotes, userVoted: newUserVoted };
+    synchronizePostData(post.id, updatedPost);
     setPost(updatedPost);
 
     toast({
-      description: `Vote ${direction === "up" ? "up" : "down"} registered`,
+      description: newUserVoted === null ? 
+        "Vote removed" : 
+        `Vote ${direction === "up" ? "up" : "down"} registered`,
     });
   };
 
@@ -141,9 +184,29 @@ const Post = () => {
       const updateComment = (comments: Comment[]): Comment[] => {
         return comments.map(comment => {
           if (comment.id === commentId) {
+            let newVotes = comment.votes;
+            let newUserVoted = comment.userVoted;
+            
+            // If user already voted in this direction, remove vote
+            if (comment.userVoted === direction) {
+              newVotes = direction === "up" ? comment.votes - 1 : comment.votes + 1;
+              newUserVoted = null;
+            } 
+            // If user voted in opposite direction, change vote (counts as 2)
+            else if (comment.userVoted !== null) {
+              newVotes = direction === "up" ? comment.votes + 2 : comment.votes - 2;
+              newUserVoted = direction;
+            } 
+            // If user hasn't voted yet, add vote
+            else {
+              newVotes = direction === "up" ? comment.votes + 1 : comment.votes - 1;
+              newUserVoted = direction;
+            }
+            
             return {
               ...comment,
-              votes: direction === "up" ? comment.votes + 1 : comment.votes - 1
+              votes: newVotes,
+              userVoted: newUserVoted
             };
           } else if (comment.replies.length > 0) {
             return {
@@ -159,16 +222,16 @@ const Post = () => {
       
       // Update in localStorage if post exists
       if (post) {
-        const allPosts = getStoredPosts();
-        allPosts[post.id] = { ...post, comments: newComments };
-        storePosts(allPosts);
+        const updatedPost = { ...post, commentArray: newComments };
+        synchronizePostData(post.id, updatedPost);
+        setPost(updatedPost);
       }
       
       return newComments;
     });
 
     toast({
-      description: `Comment vote ${direction === "up" ? "up" : "down"} registered`,
+      description: `Comment vote registered`,
     });
   };
 
@@ -181,21 +244,20 @@ const Post = () => {
       author: "anonymous",
       votes: 0,
       createdAt: new Date().toISOString(),
+      userVoted: null,
       replies: []
     };
 
     const newComments = [...comments, comment];
     setComments(newComments);
     
-    // Update in localStorage
-    const allPosts = getStoredPosts();
+    // Update in localStorage and synchronize
     const updatedPost = { 
       ...post, 
-      comments: newComments,
+      commentArray: newComments,
       commentCount: post.commentCount + 1 
     };
-    allPosts[post.id] = updatedPost;
-    storePosts(allPosts);
+    synchronizePostData(post.id, updatedPost);
     setPost(updatedPost);
     
     setNewComment("");
@@ -213,6 +275,7 @@ const Post = () => {
       author: "anonymous",
       votes: 0,
       createdAt: new Date().toISOString(),
+      userVoted: null,
       replies: []
     };
 
@@ -236,14 +299,12 @@ const Post = () => {
     const newComments = addReplyToComment(comments);
     setComments(newComments);
     
-    // Update in localStorage
-    const allPosts = getStoredPosts();
+    // Update in localStorage and synchronize
     const updatedPost = { 
       ...post, 
-      comments: newComments
+      commentArray: newComments
     };
-    allPosts[post.id] = updatedPost;
-    storePosts(allPosts);
+    synchronizePostData(post.id, updatedPost);
     setPost(updatedPost);
 
     setReplyingTo(null);
@@ -259,7 +320,7 @@ const Post = () => {
         <div className="flex items-start gap-4">
           <div className="flex flex-col items-center gap-1">
             <Button 
-              variant="ghost" 
+              variant={comment.userVoted === 'up' ? "default" : "ghost"}
               size="sm" 
               onClick={() => handleCommentVote(comment.id, "up")}
             >
@@ -267,7 +328,7 @@ const Post = () => {
             </Button>
             <span className="text-sm font-medium">{comment.votes}</span>
             <Button 
-              variant="ghost" 
+              variant={comment.userVoted === 'down' ? "default" : "ghost"}
               size="sm" 
               onClick={() => handleCommentVote(comment.id, "down")}
             >
@@ -353,11 +414,19 @@ const Post = () => {
           <CardContent>
             <div className="flex gap-4">
               <div className="flex flex-col items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => handleVote("up")}>
+                <Button 
+                  variant={userVoted === 'up' ? "default" : "ghost"} 
+                  size="sm" 
+                  onClick={() => handleVote("up")}
+                >
                   <ArrowUp className="h-4 w-4" />
                 </Button>
                 <span className="text-sm font-medium">{votes}</span>
-                <Button variant="ghost" size="sm" onClick={() => handleVote("down")}>
+                <Button 
+                  variant={userVoted === 'down' ? "default" : "ghost"} 
+                  size="sm" 
+                  onClick={() => handleVote("down")}
+                >
                   <ArrowDown className="h-4 w-4" />
                 </Button>
               </div>

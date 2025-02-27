@@ -11,9 +11,10 @@ interface PostCardProps {
   community: string;
   votes: number;
   comments: number;
+  userVoted?: 'up' | 'down' | null;
 }
 
-export function PostCard({ id, title, content, community, votes, comments }: PostCardProps) {
+export function PostCard({ id, title, content, community, votes, comments, userVoted = null }: PostCardProps) {
   const navigate = useNavigate();
 
   // Create a preview of content
@@ -21,6 +22,51 @@ export function PostCard({ id, title, content, community, votes, comments }: Pos
 
   const handleClick = () => {
     navigate(`/post/${id}`);
+  };
+
+  const handleVote = (e: React.MouseEvent, direction: 'up' | 'down') => {
+    e.stopPropagation();
+    
+    // Get all posts
+    const storedPosts = localStorage.getItem('posts');
+    const posts = storedPosts ? JSON.parse(storedPosts) : {};
+    
+    // Find the post
+    const post = posts[id];
+    if (!post) return;
+    
+    let newVotes = post.votes;
+    let newUserVoted = post.userVoted;
+    
+    // If user already voted in this direction, remove their vote
+    if (post.userVoted === direction) {
+      newVotes = direction === "up" ? post.votes - 1 : post.votes + 1;
+      newUserVoted = null;
+    } 
+    // If user voted in opposite direction, change their vote (counts as 2)
+    else if (post.userVoted !== null) {
+      newVotes = direction === "up" ? post.votes + 2 : post.votes - 2;
+      newUserVoted = direction;
+    } 
+    // If user hasn't voted yet, add their vote
+    else {
+      newVotes = direction === "up" ? post.votes + 1 : post.votes - 1;
+      newUserVoted = direction;
+    }
+    
+    // Update post
+    post.votes = newVotes;
+    post.userVoted = newUserVoted;
+    
+    // Save back to localStorage
+    posts[id] = post;
+    localStorage.setItem('posts', JSON.stringify(posts));
+    
+    // Directly update the DOM (in a real app we'd use React state management)
+    const voteElement = e.currentTarget.parentElement?.querySelector('span');
+    if (voteElement) {
+      voteElement.textContent = newVotes.toString();
+    }
   };
 
   return (
@@ -39,11 +85,21 @@ export function PostCard({ id, title, content, community, votes, comments }: Pos
         <p className="text-gray-700 mb-4">{contentPreview}</p>
         <div className="flex items-center gap-4 text-gray-500">
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => e.stopPropagation()}>
+            <Button 
+              variant={userVoted === 'up' ? "default" : "ghost"} 
+              size="sm" 
+              className="h-8 px-2" 
+              onClick={(e) => handleVote(e, 'up')}
+            >
               <ArrowUp className="h-4 w-4" />
             </Button>
             <span>{votes}</span>
-            <Button variant="ghost" size="sm" className="h-8 px-2" onClick={(e) => e.stopPropagation()}>
+            <Button 
+              variant={userVoted === 'down' ? "default" : "ghost"} 
+              size="sm" 
+              className="h-8 px-2" 
+              onClick={(e) => handleVote(e, 'down')}
+            >
               <ArrowDown className="h-4 w-4" />
             </Button>
           </div>

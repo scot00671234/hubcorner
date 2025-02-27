@@ -41,16 +41,23 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
     // Get the community name from URL
     const communityName = window.location.pathname.split('/').pop() || "";
 
-    const newPost = {
-      id: Date.now().toString(),
+    // Create a post that matches the Post interface
+    const postData: Post = {
       title,
       content,
       community: communityName,
       votes: 0,
-      comments: 0, // This is the comment count
-      commentCount: 0, // This matches the Post page's schema
+      comments: 0
+    };
+
+    // Create extended post data for localStorage
+    const newPost = {
+      ...postData,
+      id: Date.now().toString(),
       author: "anonymous",
-      comments: [] // This is the array of comments
+      commentCount: 0,
+      commentArray: [], // Use a different name to avoid conflict
+      userVoted: null, // Track if user voted (null, 'up', or 'down')
     };
 
     // Save post to localStorage
@@ -59,7 +66,7 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
     existingPosts[newPost.id] = newPost;
     localStorage.setItem('posts', JSON.stringify(existingPosts));
 
-    onPostCreated(newPost);
+    onPostCreated(postData);
     setTitle("");
     setContent("");
     setOpen(false);

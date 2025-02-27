@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { PostCard } from "@/components/post/PostCard";
@@ -16,6 +15,7 @@ export interface Post {
 interface FullPost extends Post {
   id: string;
   author: string;
+  userVoted?: 'up' | 'down' | null;
 }
 
 interface CommunityProps {
@@ -44,8 +44,9 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
         content: post.content,
         community: post.community,
         votes: post.votes,
-        comments: post.comments,
-        author: post.author
+        comments: post.commentCount || post.comments || 0,
+        author: post.author,
+        userVoted: post.userVoted || null
       }));
 
     // Combine with posts from props if they exist
@@ -56,6 +57,32 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
     
     setCommunityPosts(uniquePosts);
   }, [communityName, posts]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (!communityName) return;
+
+      const storedPosts = localStorage.getItem('posts');
+      const localPosts = storedPosts ? JSON.parse(storedPosts) : {};
+      
+      const filteredPosts = Object.values(localPosts)
+        .filter((post: any) => post.community === communityName)
+        .map((post: any) => ({
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          community: post.community,
+          votes: post.votes,
+          comments: post.commentCount || post.comments || 0,
+          author: post.author,
+          userVoted: post.userVoted || null
+        }));
+
+      setCommunityPosts(filteredPosts as FullPost[]);
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [communityName]);
 
   const handlePostClick = (postId: string) => {
     navigate(`/post/${postId}`);
