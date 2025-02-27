@@ -75,11 +75,11 @@ export function PostCard({ id, title, content, community, votes, comments, userV
   };
 
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleClick}>
+    <Card className="cursor-pointer hover:shadow-md transition-shadow card-gradient border border-blue-100" onClick={handleClick}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-xl">{title}</CardTitle>
+            <CardTitle className="text-xl text-blue-800">{title}</CardTitle>
             <p className="text-sm text-muted-foreground">
               Posted in <button 
                 className="text-blue-500 hover:underline font-medium"
@@ -90,13 +90,13 @@ export function PostCard({ id, title, content, community, votes, comments, userV
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-gray-700 mb-4">{contentPreview}</p>
-        <div className="flex items-center gap-4 text-gray-500">
+        <p className="text-blue-900 mb-4">{contentPreview}</p>
+        <div className="flex items-center gap-4 text-blue-600">
           <div className="flex items-center gap-1">
             <Button 
               variant={userVoted === 'up' ? "default" : "ghost"} 
               size="sm" 
-              className="h-8 px-2" 
+              className={`h-8 px-2 ${userVoted === 'up' ? 'bg-blue-500 text-white' : ''}`}
               onClick={(e) => handleVote(e, 'up')}
             >
               <ArrowUp className="h-4 w-4" />
@@ -105,7 +105,7 @@ export function PostCard({ id, title, content, community, votes, comments, userV
             <Button 
               variant={userVoted === 'down' ? "default" : "ghost"} 
               size="sm" 
-              className="h-8 px-2" 
+              className={`h-8 px-2 ${userVoted === 'down' ? 'bg-blue-500 text-white' : ''}`}
               onClick={(e) => handleVote(e, 'down')}
             >
               <ArrowDown className="h-4 w-4" />

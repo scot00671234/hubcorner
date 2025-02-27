@@ -29,18 +29,20 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route 
-              path="/community/:communityName" 
-              element={<Community 
-                posts={posts} 
-                onPostCreated={handleNewPost} 
-              />} 
-            />
-            <Route path="/post/:postId" element={<Post />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route 
+                path="/community/:communityName" 
+                element={<Community 
+                  posts={posts} 
+                  onPostCreated={handleNewPost} 
+                />} 
+              />
+              <Route path="/post/:postId" element={<Post />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
