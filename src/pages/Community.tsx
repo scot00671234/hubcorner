@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { PostCard } from "@/components/post/PostCard";

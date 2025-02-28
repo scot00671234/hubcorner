@@ -54,29 +54,61 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
         author: "anonymous"
       };
 
-      // Send post to backend API
-      const response = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postData),
-      });
+      // Try to send post to backend API
+      let createdPost;
+      let apiSuccess = false;
+      
+      try {
+        const response = await fetch('/api/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(postData),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create post');
+        if (response.ok) {
+          createdPost = await response.json();
+          apiSuccess = true;
+        }
+      } catch (apiError) {
+        console.error('API error:', apiError);
+        // We'll handle this in the fallback below
+      }
+      
+      // If API fails, use localStorage fallback
+      if (!apiSuccess) {
+        // Get existing posts
+        const storedPosts = localStorage.getItem('posts');
+        const existingPosts = storedPosts ? JSON.parse(storedPosts) : {};
+        
+        // Add the new post with comments array
+        const newPost = {
+          ...postData,
+          votes: 0,
+          commentCount: 0,
+          comments: [],
+          created_at: new Date().toISOString()
+        };
+        
+        // Store in localStorage
+        existingPosts[postData.id] = newPost;
+        localStorage.setItem('posts', JSON.stringify(existingPosts));
+        
+        createdPost = newPost;
+        
+        console.log('Created post in localStorage:', newPost);
       }
 
-      const createdPost = await response.json();
-
       // Convert to frontend Post type
-      const frontendPost: Post = {
+      const frontendPost: Post & { id: string, author: string } = {
+        id: createdPost.id,
         title: createdPost.title,
         content: createdPost.content,
         community: createdPost.community,
-        votes: createdPost.votes,
-        comments: createdPost.comments
+        votes: createdPost.votes || 0,
+        comments: createdPost.comments || 0,
+        author: createdPost.author || 'anonymous'
       };
 
       onPostCreated(frontendPost);
