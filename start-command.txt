@@ -1,0 +1,9 @@
+
+To add the start command, add this to your package.json scripts section:
+
+"start": "node start.js"
+
+You can do this by running:
+npm pkg set scripts.start="node start.js"
+
+After building your app with "npm run build", use "npm start" to run your self-hosted Lynxier app.

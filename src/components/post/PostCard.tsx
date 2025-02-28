@@ -3,6 +3,8 @@ import { ArrowUp, ArrowDown, MessageSquare } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface PostCardProps {
   id: string;
@@ -14,8 +16,11 @@ interface PostCardProps {
   userVoted?: 'up' | 'down' | null;
 }
 
-export function PostCard({ id, title, content, community, votes, comments, userVoted = null }: PostCardProps) {
+export function PostCard({ id, title, content, community, votes: initialVotes, comments, userVoted: initialUserVoted = null }: PostCardProps) {
   const navigate = useNavigate();
+  const [votes, setVotes] = useState(initialVotes);
+  const [userVoted, setUserVoted] = useState(initialUserVoted);
+  const [isVoting, setIsVoting] = useState(false);
 
   // Create a preview of content
   const contentPreview = content.length > 150 ? `${content.slice(0, 150)}...` : content;
@@ -29,48 +34,46 @@ export function PostCard({ id, title, content, community, votes, comments, userV
     navigate(`/community/${community}`);
   };
 
-  const handleVote = (e: React.MouseEvent, direction: 'up' | 'down') => {
+  const handleVote = async (e: React.MouseEvent, direction: 'up' | 'down') => {
     e.stopPropagation();
     
-    // Get all posts
-    const storedPosts = localStorage.getItem('posts');
-    const posts = storedPosts ? JSON.parse(storedPosts) : {};
+    if (isVoting) return;
     
-    // Find the post
-    const post = posts[id];
-    if (!post) return;
+    setIsVoting(true);
     
-    let newVotes = post.votes;
-    let newUserVoted = post.userVoted;
-    
-    // If user already voted in this direction, remove their vote
-    if (post.userVoted === direction) {
-      newVotes = direction === "up" ? post.votes - 1 : post.votes + 1;
-      newUserVoted = null;
-    } 
-    // If user voted in opposite direction, change their vote (counts as 2)
-    else if (post.userVoted !== null) {
-      newVotes = direction === "up" ? post.votes + 2 : post.votes - 2;
-      newUserVoted = direction;
-    } 
-    // If user hasn't voted yet, add their vote
-    else {
-      newVotes = direction === "up" ? post.votes + 1 : post.votes - 1;
-      newUserVoted = direction;
-    }
-    
-    // Update post
-    post.votes = newVotes;
-    post.userVoted = newUserVoted;
-    
-    // Save back to localStorage
-    posts[id] = post;
-    localStorage.setItem('posts', JSON.stringify(posts));
-    
-    // Directly update the DOM (in a real app we'd use React state management)
-    const voteElement = e.currentTarget.parentElement?.querySelector('span');
-    if (voteElement) {
-      voteElement.textContent = newVotes.toString();
+    try {
+      // Call the backend API to vote
+      const response = await fetch(`/api/posts/${id}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: 'anonymous', // In a real app, this would be the user ID
+          vote_type: direction
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to vote');
+      }
+      
+      const updatedPost = await response.json();
+      
+      // Update state with new vote counts
+      setVotes(updatedPost.votes);
+      setUserVoted(updatedPost.userVoted);
+      
+    } catch (error) {
+      console.error('Error voting on post:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to vote on post",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVoting(false);
     }
   };
 
@@ -98,6 +101,7 @@ export function PostCard({ id, title, content, community, votes, comments, userV
               size="sm" 
               className={`h-8 px-2 ${userVoted === 'up' ? 'bg-blue-500 text-white' : ''}`}
               onClick={(e) => handleVote(e, 'up')}
+              disabled={isVoting}
             >
               <ArrowUp className="h-4 w-4" />
             </Button>
@@ -107,6 +111,7 @@ export function PostCard({ id, title, content, community, votes, comments, userV
               size="sm" 
               className={`h-8 px-2 ${userVoted === 'down' ? 'bg-blue-500 text-white' : ''}`}
               onClick={(e) => handleVote(e, 'down')}
+              disabled={isVoting}
             >
               <ArrowDown className="h-4 w-4" />
             </Button>

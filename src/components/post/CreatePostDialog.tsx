@@ -26,9 +26,10 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
       toast({
         title: "Error",
@@ -38,46 +39,68 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
       return;
     }
 
-    // Get the community name from URL
-    const communityName = window.location.pathname.split('/').pop() || "";
+    setIsSubmitting(true);
 
-    // Create a post that matches the Post interface
-    const postData: Post = {
-      title,
-      content,
-      community: communityName,
-      votes: 0,
-      comments: 0
-    };
+    try {
+      // Get the community name from URL
+      const communityName = window.location.pathname.split('/').pop() || "";
 
-    // Create extended post data for localStorage
-    const newPost = {
-      ...postData,
-      id: Date.now().toString(),
-      author: "anonymous",
-      commentCount: 0,
-      commentArray: [], // Use a different name to avoid conflict
-      userVoted: null, // Track if user voted (null, 'up', or 'down')
-    };
+      // Create a post data
+      const postData = {
+        id: Date.now().toString(),
+        title,
+        content,
+        community: communityName,
+        author: "anonymous"
+      };
 
-    // Save post to localStorage
-    const storedPosts = localStorage.getItem('posts');
-    const existingPosts = storedPosts ? JSON.parse(storedPosts) : {};
-    existingPosts[newPost.id] = newPost;
-    localStorage.setItem('posts', JSON.stringify(existingPosts));
+      // Send post to backend API
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
 
-    onPostCreated(postData);
-    setTitle("");
-    setContent("");
-    setOpen(false);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create post');
+      }
 
-    toast({
-      title: "Success",
-      description: "Post created successfully!",
-    });
+      const createdPost = await response.json();
 
-    // Navigate to the new post
-    navigate(`/post/${newPost.id}`);
+      // Convert to frontend Post type
+      const frontendPost: Post = {
+        title: createdPost.title,
+        content: createdPost.content,
+        community: createdPost.community,
+        votes: createdPost.votes,
+        comments: createdPost.comments
+      };
+
+      onPostCreated(frontendPost);
+      setTitle("");
+      setContent("");
+      setOpen(false);
+
+      toast({
+        title: "Success",
+        description: "Post created successfully!",
+      });
+
+      // Navigate to the new post
+      navigate(`/post/${createdPost.id}`);
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -121,10 +144,12 @@ export function CreatePostDialog({ onPostCreated }: CreatePostDialogProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Submit</Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
