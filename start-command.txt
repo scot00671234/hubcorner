@@ -1,9 +1,19 @@
 
-To add the start command, add this to your package.json scripts section:
+To add the start and dev commands, add these to your package.json scripts section:
 
-"start": "node start.js"
+"start": "node start.js",
+"dev": "concurrently \"vite\" \"nodemon server.js\"",
 
 You can do this by running:
 npm pkg set scripts.start="node start.js"
+npm pkg set scripts.dev="concurrently \"vite\" \"nodemon server.js\""
 
-After building your app with "npm run build", use "npm start" to run your self-hosted Lynxier app.
+You should also install these development dependencies:
+npm install -D concurrently nodemon
+
+For production:
+1. Build your app with "npm run build"
+2. Run "npm start" to start your self-hosted Lynxier app
+
+For development:
+1. Run "npm run dev" to start both frontend and backend in development mode with hot reloading
