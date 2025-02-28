@@ -42,26 +42,73 @@ export function PostCard({ id, title, content, community, votes: initialVotes, c
     setIsVoting(true);
     
     try {
-      // Call the backend API to vote
-      const response = await fetch(`/api/posts/${id}/vote`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: 'anonymous', // In a real app, this would be the user ID
-          vote_type: direction
-        }),
-      });
+      // Try to call the backend API to vote
+      let apiSuccess = false;
+      let updatedPost;
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to vote');
+      try {
+        const response = await fetch(`/api/posts/${id}/vote`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: 'anonymous', // In a real app, this would be the user ID
+            vote_type: direction
+          }),
+        });
+        
+        if (response.ok) {
+          updatedPost = await response.json();
+          apiSuccess = true;
+        }
+      } catch (apiError) {
+        console.error('API error:', apiError);
+        // We'll handle with localStorage fallback
       }
       
-      const updatedPost = await response.json();
+      // Fallback to localStorage if API call fails
+      if (!apiSuccess) {
+        // Calculate new vote count and user's vote state
+        let newVotes = votes;
+        let newUserVoted = userVoted;
+        
+        // If user already voted in this direction, remove their vote
+        if (userVoted === direction) {
+          newVotes = direction === "up" ? votes - 1 : votes + 1;
+          newUserVoted = null;
+        } 
+        // If user voted in opposite direction, change their vote (counts as 2)
+        else if (userVoted !== null) {
+          newVotes = direction === "up" ? votes + 2 : votes - 2;
+          newUserVoted = direction;
+        } 
+        // If user hasn't voted yet, add their vote
+        else {
+          newVotes = direction === "up" ? votes + 1 : votes - 1;
+          newUserVoted = direction;
+        }
+        
+        // Update localStorage
+        const storedPosts = localStorage.getItem('posts');
+        const posts = storedPosts ? JSON.parse(storedPosts) : {};
+        
+        if (posts[id]) {
+          posts[id].votes = newVotes;
+          posts[id].userVoted = newUserVoted;
+          localStorage.setItem('posts', JSON.stringify(posts));
+          
+          // For debugging
+          console.log(`Post ${id} synchronized with updated data`);
+        }
+        
+        updatedPost = {
+          votes: newVotes,
+          userVoted: newUserVoted
+        };
+      }
       
-      // Update state with new vote counts
+      // Update UI with new vote counts
       setVotes(updatedPost.votes);
       setUserVoted(updatedPost.userVoted);
       
