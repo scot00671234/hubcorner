@@ -78,6 +78,88 @@ const db = new sqlite3.Database('./lynxier.db', (err) => {
 });
 
 // API Routes
+// Search API Routes
+// Search for posts
+app.get('/api/search/posts', (req, res) => {
+  const query = req.query.q;
+  
+  if (!query || query.trim() === '') {
+    return res.json([]);
+  }
+  
+  const searchTerm = `%${query}%`;
+  
+  db.all(
+    `SELECT id, title, community 
+     FROM posts 
+     WHERE title LIKE ? OR content LIKE ? 
+     ORDER BY created_at DESC 
+     LIMIT 10`,
+    [searchTerm, searchTerm],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
+// Search for communities
+app.get('/api/search/communities', (req, res) => {
+  const query = req.query.q;
+  
+  if (!query || query.trim() === '') {
+    return res.json([]);
+  }
+  
+  const searchTerm = `%${query}%`;
+  
+  db.all(
+    `SELECT name, description 
+     FROM communities 
+     WHERE name LIKE ? OR description LIKE ? 
+     ORDER BY name ASC 
+     LIMIT 10`,
+    [searchTerm, searchTerm],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
+// Search for comments
+app.get('/api/search/comments', (req, res) => {
+  const query = req.query.q;
+  
+  if (!query || query.trim() === '') {
+    return res.json([]);
+  }
+  
+  const searchTerm = `%${query}%`;
+  
+  db.all(
+    `SELECT c.id, c.content, c.post_id as postId
+     FROM comments c
+     WHERE c.content LIKE ?
+     ORDER BY c.created_at DESC
+     LIMIT 10`,
+    [searchTerm],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
 // Get all communities
 app.get('/api/communities', (req, res) => {
   db.all('SELECT * FROM communities ORDER BY name ASC', [], (err, rows) => {
