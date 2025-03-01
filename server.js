@@ -1,3 +1,4 @@
+
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -11,7 +12,6 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'dist')));
 
 // Initialize SQLite database
 const db = new sqlite3.Database('./lynxier.db', (err) => {
@@ -67,6 +67,7 @@ const db = new sqlite3.Database('./lynxier.db', (err) => {
       ['law', 'Legal discussions and advice'],
       ['medicine', 'Medical discussions and health advice'],
       ['education', 'Topics related to learning and teaching'],
+      ['hi', 'Discussions about hi'],
     ];
     
     const insertCommunity = db.prepare('INSERT OR IGNORE INTO communities (name, description) VALUES (?, ?)');
@@ -432,7 +433,10 @@ app.post('/api/communities', (req, res) => {
   });
 });
 
-// Serve React app for all other routes
+// Serve static files from the 'dist' directory
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Serve React app for all other routes - this must come AFTER all API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });

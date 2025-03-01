@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { 
   Command,
   CommandDialog, 
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/command";
 import { useNavigate } from "react-router-dom";
 import { CreateCommunityDialog } from "@/components/community/CreateCommunityDialog";
+import { useToast } from "@/hooks/use-toast";
 
 // Types for search results
 interface SearchableCommunity {
@@ -52,6 +52,7 @@ export function Navbar() {
     error: null
   });
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Only fetch search results when the search dialog is open and we have a search term
@@ -72,38 +73,79 @@ export function Navbar() {
       setSearchResults(prev => ({ ...prev, isLoading: true, error: null }));
       
       try {
-        // Fetch posts that match the search term
-        const postsResponse = await fetch(`/api/search/posts?q=${encodeURIComponent(search.trim())}`);
-        if (!postsResponse.ok) throw new Error('Failed to fetch posts');
-        const posts = await postsResponse.json();
+        const fetchResults = async (endpoint: string) => {
+          const response = await fetch(`/api/search/${endpoint}?q=${encodeURIComponent(search.trim())}`);
+          if (!response.ok) {
+            console.error(`Error fetching ${endpoint}:`, response.statusText);
+            throw new Error(`Failed to fetch ${endpoint}`);
+          }
+          
+          try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              return await response.json();
+            } else {
+              console.error(`Received non-JSON response for ${endpoint}`);
+              throw new Error(`Invalid response format for ${endpoint}`);
+            }
+          } catch (parseError) {
+            console.error(`JSON parse error for ${endpoint}:`, parseError);
+            throw new Error(`Invalid response data for ${endpoint}`);
+          }
+        };
         
-        // Fetch communities that match the search term
-        const communitiesResponse = await fetch(`/api/search/communities?q=${encodeURIComponent(search.trim())}`);
-        if (!communitiesResponse.ok) throw new Error('Failed to fetch communities');
-        const communities = await communitiesResponse.json();
+        // Use Promise.allSettled to handle partial failures
+        const [postsPromise, communitiesPromise, commentsPromise] = await Promise.allSettled([
+          fetchResults('posts'),
+          fetchResults('communities'),
+          fetchResults('comments')
+        ]);
         
-        // Fetch comments that match the search term
-        const commentsResponse = await fetch(`/api/search/comments?q=${encodeURIComponent(search.trim())}`);
-        if (!commentsResponse.ok) throw new Error('Failed to fetch comments');
-        const comments = await commentsResponse.json();
+        const posts = postsPromise.status === 'fulfilled' ? postsPromise.value : [];
+        const communities = communitiesPromise.status === 'fulfilled' ? communitiesPromise.value : [];
+        const comments = commentsPromise.status === 'fulfilled' ? commentsPromise.value : [];
         
-        setSearchResults({
-          posts,
-          communities,
-          comments,
-          isLoading: false,
-          error: null
-        });
+        // Check if any promises failed and show toast if needed
+        const failures = [postsPromise, communitiesPromise, commentsPromise].filter(p => p.status === 'rejected');
+        if (failures.length > 0) {
+          // Some API calls failed, use fallback for those
+          fallbackSearch(search);
+          toast({
+            title: "Search partially succeeded",
+            description: "Some results may be using local data",
+            variant: "default"
+          });
+        } else if (posts.length === 0 && communities.length === 0 && comments.length === 0) {
+          // No results found in API, try fallback
+          fallbackSearch(search);
+        } else {
+          // All API calls succeeded with results
+          setSearchResults({
+            posts,
+            communities,
+            comments,
+            isLoading: false,
+            error: null
+          });
+        }
       } catch (error) {
         console.error('Search error:', error);
+        
+        // Show error toast
+        toast({
+          title: "Search failed",
+          description: "Falling back to local search",
+          variant: "destructive"
+        });
+        
+        // Fallback to client-side search if API fails
+        fallbackSearch(search);
+        
         setSearchResults(prev => ({
           ...prev,
           isLoading: false,
           error: error instanceof Error ? error.message : 'An unknown error occurred'
         }));
-        
-        // Fallback to client-side search if API fails
-        fallbackSearch(search);
       }
     }, 300); // 300ms debounce
 
@@ -133,6 +175,7 @@ export function Navbar() {
         { name: "law", description: "Legal discussions and advice" },
         { name: "medicine", description: "Medical discussions and health advice" },
         { name: "education", description: "Topics related to learning and teaching" },
+        { name: "hi", description: "Discussions about hi" },
       ],
       comments: [
         { id: "1", content: "Great perspective on anonymity!", postId: "123" },
