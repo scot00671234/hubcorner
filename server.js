@@ -1,4 +1,3 @@
-
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -299,6 +298,53 @@ app.post('/api/posts/:id/vote', (req, res) => {
             );
           }
         );
+      }
+    );
+  });
+});
+
+// Create a new community
+app.post('/api/communities', (req, res) => {
+  const { name, description } = req.body;
+  
+  if (!name) {
+    res.status(400).json({ error: 'Community name is required' });
+    return;
+  }
+  
+  // Validate community name format
+  if (!/^[a-z0-9-]+$/.test(name)) {
+    res.status(400).json({ error: 'Community name can only contain lowercase letters, numbers, and hyphens' });
+    return;
+  }
+  
+  // Check if community already exists
+  db.get('SELECT * FROM communities WHERE name = ?', [name], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    
+    if (row) {
+      res.status(409).json({ error: 'A community with this name already exists' });
+      return;
+    }
+    
+    // Insert new community
+    db.run(
+      'INSERT INTO communities (name, description) VALUES (?, ?)',
+      [name, description || `Discussions about ${name}`],
+      function(err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        
+        res.status(201).json({
+          name,
+          description: description || `Discussions about ${name}`,
+          created_at: new Date().toISOString()
+        });
       }
     );
   });

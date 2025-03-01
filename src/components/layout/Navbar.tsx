@@ -1,7 +1,8 @@
 
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { 
   Command,
   CommandDialog, 
@@ -12,6 +13,7 @@ import {
   CommandList
 } from "@/components/ui/command";
 import { useNavigate } from "react-router-dom";
+import { CreateCommunityDialog } from "@/components/community/CreateCommunityDialog";
 import type { Post } from "@/pages/Community";
 
 // This would come from your backend in a real application
@@ -74,6 +76,9 @@ export function Navbar() {
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400" />
               </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <CreateCommunityDialog />
             </div>
           </div>
         </div>
