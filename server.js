@@ -1,24 +1,24 @@
-
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
+const config = require('./src/config');
 
 // Initialize express app
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.PORT;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // Initialize SQLite database
-const db = new sqlite3.Database('./lynxier.db', (err) => {
+const db = new sqlite3.Database(config.DB_PATH, (err) => {
   if (err) {
     console.error('Error opening database', err.message);
   } else {
-    console.log('Connected to the SQLite database');
+    console.log(`Connected to the SQLite database at ${config.DB_PATH}`);
     
     // Create tables if they don't exist
     db.run(`CREATE TABLE IF NOT EXISTS communities (
@@ -442,8 +442,19 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Access your application at http://localhost:${PORT}`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Please choose a different port.`);
+  } else {
+    console.error('Server error:', error);
+  }
+  process.exit(1);
 });
 
 // Close database on app termination

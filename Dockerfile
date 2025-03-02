@@ -1,5 +1,5 @@
 
-FROM node:18
+FROM node:18-alpine
 
 WORKDIR /app
 
@@ -7,16 +7,26 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm ci --only=production
 
 # Copy application code
 COPY . .
 
 # Build the React app
-RUN npm run build
+RUN npm install --only=development && \
+    npm run build && \
+    npm prune --production
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3001
 
 # Expose the port
 EXPOSE 3001
 
-# Run the combined application
-CMD ["npm", "start"]
+# Create volume for database persistence
+VOLUME ["/app/data"]
+ENV DB_PATH=/app/data/lynxier.db
+
+# Run the application
+CMD ["node", "start.js"]
