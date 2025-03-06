@@ -1,5 +1,5 @@
 
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
@@ -19,10 +19,10 @@ RUN npm install --only=development && \
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=3000
 
 # Expose the port
-EXPOSE 3001
+EXPOSE 3000
 
 # Create volume for database persistence
 VOLUME ["/app/data"]
