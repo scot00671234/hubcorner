@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// Create data directory if it doesn't exist
-	dataDir := filepath.Join("/home/run-lynxier/data")
+	dataDir := filepath.Join("./data")
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		log.Printf("Warning: Could not create data directory: %v", err)
 	}
@@ -57,22 +57,34 @@ func main() {
 	}
 
 	// Write Nginx configuration
-	nginxConfig := `location / {
-    proxy_pass http://127.0.0.1:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_cache_bypass $http_upgrade;
+	nginxConfig := `server {
+    listen 80;
+    server_name _;  # Replace with your domain if you have one
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
 }`
 
-	nginxPath := filepath.Join("/home/run-lynxier/nginx.conf")
+	nginxPath := filepath.Join("./nginx.conf")
 	if err := os.WriteFile(nginxPath, []byte(nginxConfig), 0644); err != nil {
 		log.Printf("Warning: Could not write Nginx configuration: %v", err)
 	}
 
 	fmt.Println("\n✅ Deployment completed!")
 	fmt.Println("\nNext steps:")
-	fmt.Println("1. Import the nginx.conf file in CloudPanel > Sites > lynxier.run.place > Vhost")
-	fmt.Println("2. Your application should be accessible at: https://lynxier.run.place")
+	fmt.Println("1. If you're using Nginx, copy the generated nginx.conf to your Nginx configuration:")
+	fmt.Println("   sudo cp ./nginx.conf /etc/nginx/sites-available/hubcorner")
+	fmt.Println("2. Create a symbolic link to sites-enabled:")
+	fmt.Println("   sudo ln -s /etc/nginx/sites-available/hubcorner /etc/nginx/sites-enabled/")
+	fmt.Println("3. Test Nginx configuration:")
+	fmt.Println("   sudo nginx -t")
+	fmt.Println("4. Reload Nginx:")
+	fmt.Println("   sudo systemctl reload nginx")
+	fmt.Println("5. Your application should now be accessible at http://your-server-ip")
 }
