@@ -61,7 +61,7 @@ const Index = () => {
       <Navbar />
       <main className="container mx-auto px-4 pt-24 pb-12">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome to Lynxier</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome to Hub Corner</h1>
           <p className="text-gray-600 mt-2">
             A place for anonymous discussions. Explore communities and share your thoughts freely.
           </p>

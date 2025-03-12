@@ -1,7 +1,7 @@
 
 # Deploying to CloudPanel VPS
 
-This guide provides step-by-step instructions for deploying Lynxier on CloudPanel VPS.
+This guide provides step-by-step instructions for deploying Hub Corner on CloudPanel VPS.
 
 ## Prerequisites
 
@@ -65,7 +65,7 @@ This guide provides step-by-step instructions for deploying Lynxier on CloudPane
 
 ## Troubleshooting
 
-- **Application not starting**: Check PM2 logs with `pm2 logs lynxier`
+- **Application not starting**: Check PM2 logs with `pm2 logs hubcorner`
 - **Database errors**: Ensure the data directory has proper permissions with `chmod 755 -R ~/data`
 - **Nginx errors**: Check CloudPanel logs at Sites > lynxier.run.place > Logs
 
@@ -80,10 +80,10 @@ This guide provides step-by-step instructions for deploying Lynxier on CloudPane
 
 - **View application logs**:
   ```
-  pm2 logs lynxier
+  pm2 logs hubcorner
   ```
 
 - **Restart the application**:
   ```
-  pm2 restart lynxier
+  pm2 restart hubcorner
   ```

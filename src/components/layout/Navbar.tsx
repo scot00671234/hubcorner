@@ -213,7 +213,7 @@ export function Navbar() {
         <div className="container mx-auto px-4">
           <div className="h-16 flex items-center justify-between">
             <a href="/" className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
-              Lynxier
+              Hub Corner
             </a>
             <div className="flex-1 max-w-xl mx-4">
               <div className="relative">

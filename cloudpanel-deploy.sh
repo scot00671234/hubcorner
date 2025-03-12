@@ -1,10 +1,10 @@
 
 #!/bin/bash
 
-# CloudPanel deployment script for Lynxier
+# CloudPanel deployment script for Hub Corner
 # Make this file executable with: chmod +x cloudpanel-deploy.sh
 
-echo "Starting Lynxier deployment to CloudPanel..."
+echo "Starting Hub Corner deployment to CloudPanel..."
 
 # Create data directory if it doesn't exist
 mkdir -p /home/run-lynxier/data
@@ -22,12 +22,12 @@ if ! command -v pm2 &> /dev/null; then
 fi
 
 # Stop any existing PM2 process
-pm2 stop lynxier 2>/dev/null || true
-pm2 delete lynxier 2>/dev/null || true
+pm2 stop hubcorner 2>/dev/null || true
+pm2 delete hubcorner 2>/dev/null || true
 
 # Start the application with PM2
 echo "Starting application with PM2..."
-pm2 start start.js --name lynxier
+pm2 start start.js --name hubcorner
 
 # Save PM2 process list to start automatically on system restart
 pm2 save

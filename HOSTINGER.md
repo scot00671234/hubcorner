@@ -1,7 +1,7 @@
 
 # Deploying to Hostinger
 
-This guide will help you deploy the Lynxier application on Hostinger VPS.
+This guide will help you deploy the Hub Corner application on Hostinger VPS.
 
 ## Prerequisites
 
@@ -48,7 +48,7 @@ This guide will help you deploy the Lynxier application on Hostinger VPS.
 
    ```
    export PORT=3001
-   export DB_PATH=/path/to/lynxier.db
+   export DB_PATH=/path/to/hubcorner.db
    ```
 
 7. **Start the application**
@@ -66,7 +66,7 @@ This guide will help you deploy the Lynxier application on Hostinger VPS.
 
    Start your application with PM2:
    ```
-   pm2 start start.js --name lynxier
+   pm2 start start.js --name hubcorner
    ```
 
    Make PM2 start on server boot:
@@ -84,7 +84,7 @@ This guide will help you deploy the Lynxier application on Hostinger VPS.
 
    Create a configuration file:
    ```
-   sudo nano /etc/nginx/sites-available/lynxier
+   sudo nano /etc/nginx/sites-available/hubcorner
    ```
 
    Add the following configuration:
@@ -106,7 +106,7 @@ This guide will help you deploy the Lynxier application on Hostinger VPS.
 
    Enable the site:
    ```
-   sudo ln -s /etc/nginx/sites-available/lynxier /etc/nginx/sites-enabled/
+   sudo ln -s /etc/nginx/sites-available/hubcorner /etc/nginx/sites-enabled/
    sudo nginx -t
    sudo systemctl restart nginx
    ```
@@ -121,7 +121,7 @@ This guide will help you deploy the Lynxier application on Hostinger VPS.
 ## Troubleshooting
 
 - If the application isn't accessible, check if the ports are open in your Hostinger VPS firewall settings.
-- Check the logs with `pm2 logs lynxier` to diagnose any issues.
+- Check the logs with `pm2 logs hubcorner` to diagnose any issues.
 - Ensure the database file is in a directory with proper write permissions.
 
 ## Maintenance
@@ -131,5 +131,5 @@ This guide will help you deploy the Lynxier application on Hostinger VPS.
   git pull
   npm install
   npm run build
-  pm2 restart lynxier
+  pm2 restart hubcorner
   ```
