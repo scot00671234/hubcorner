@@ -22,6 +22,15 @@ func main() {
 	dataDir := filepath.Join("./data")
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
 		log.Printf("Warning: Could not create data directory: %v", err)
+	} else {
+		fmt.Println("✅ Data directory created/verified at ./data")
+	}
+
+	// Ensure data directory has correct permissions
+	if err := os.Chmod(dataDir, 0755); err != nil {
+		log.Printf("Warning: Could not set permissions on data directory: %v", err)
+	} else {
+		fmt.Println("✅ Data directory permissions set")
 	}
 
 	steps := []struct {
@@ -74,6 +83,8 @@ func main() {
 	nginxPath := filepath.Join("./nginx.conf")
 	if err := os.WriteFile(nginxPath, []byte(nginxConfig), 0644); err != nil {
 		log.Printf("Warning: Could not write Nginx configuration: %v", err)
+	} else {
+		fmt.Println("\n✅ Nginx configuration created at ./nginx.conf")
 	}
 
 	fmt.Println("\n✅ Deployment completed!")
@@ -87,4 +98,6 @@ func main() {
 	fmt.Println("4. Reload Nginx:")
 	fmt.Println("   sudo systemctl reload nginx")
 	fmt.Println("5. Your application should now be accessible at http://your-server-ip")
+	fmt.Println("\nIMPORTANT: The database is stored in the ./data directory. Make sure this directory")
+	fmt.Println("has the correct permissions and is backed up regularly.")
 }

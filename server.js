@@ -1,17 +1,25 @@
+
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const config = require('./src/config');
+const fs = require('fs');
 
 // Initialize express app
 const app = express();
-const PORT = config.PORT;
+const PORT = config.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+// Ensure data directory exists
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
 
 // Initialize SQLite database
 const db = new sqlite3.Database(config.DB_PATH, (err) => {
@@ -21,150 +29,79 @@ const db = new sqlite3.Database(config.DB_PATH, (err) => {
     console.log(`Connected to the SQLite database at ${config.DB_PATH}`);
     
     // Create tables if they don't exist
-    db.run(`CREATE TABLE IF NOT EXISTS communities (
-      name TEXT PRIMARY KEY,
-      description TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`);
+    db.serialize(() => {
+      // Create communities table
+      db.run(`CREATE TABLE IF NOT EXISTS communities (
+        name TEXT PRIMARY KEY,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`);
+      
+      // Create posts table
+      db.run(`CREATE TABLE IF NOT EXISTS posts (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        community TEXT NOT NULL,
+        author TEXT DEFAULT 'anonymous',
+        votes INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (community) REFERENCES communities (name)
+      )`);
+      
+      // Create comments table
+      db.run(`CREATE TABLE IF NOT EXISTS comments (
+        id TEXT PRIMARY KEY,
+        post_id TEXT NOT NULL,
+        content TEXT NOT NULL,
+        author TEXT DEFAULT 'anonymous',
+        votes INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (post_id) REFERENCES posts (id)
+      )`);
+      
+      // Create votes table
+      db.run(`CREATE TABLE IF NOT EXISTS votes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        post_id TEXT,
+        comment_id TEXT,
+        vote_type TEXT CHECK(vote_type IN ('up', 'down')),
+        UNIQUE(user_id, post_id, comment_id)
+      )`);
     
-    db.run(`CREATE TABLE IF NOT EXISTS posts (
-      id TEXT PRIMARY KEY,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      community TEXT NOT NULL,
-      author TEXT DEFAULT 'anonymous',
-      votes INTEGER DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (community) REFERENCES communities (name)
-    )`);
-    
-    db.run(`CREATE TABLE IF NOT EXISTS comments (
-      id TEXT PRIMARY KEY,
-      post_id TEXT NOT NULL,
-      content TEXT NOT NULL,
-      author TEXT DEFAULT 'anonymous',
-      votes INTEGER DEFAULT 0,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (post_id) REFERENCES posts (id)
-    )`);
-    
-    db.run(`CREATE TABLE IF NOT EXISTS votes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT,
-      post_id TEXT,
-      comment_id TEXT,
-      vote_type TEXT CHECK(vote_type IN ('up', 'down')),
-      UNIQUE(user_id, post_id, comment_id)
-    )`);
-    
-    // Insert default communities if they don't exist
-    const defaultCommunities = [
-      ['philosophy', 'Discuss philosophical topics and ideas'],
-      ['technology', 'Share and learn about the latest in tech'],
-      ['community', 'Community building and social discourse'],
-      ['science', 'Scientific discoveries and discussions'],
-      ['art', 'Share and appreciate art in all forms'],
-      ['law', 'Legal discussions and advice'],
-      ['medicine', 'Medical discussions and health advice'],
-      ['education', 'Topics related to learning and teaching'],
-      ['hi', 'Discussions about hi'],
-    ];
-    
-    const insertCommunity = db.prepare('INSERT OR IGNORE INTO communities (name, description) VALUES (?, ?)');
-    defaultCommunities.forEach(community => {
-      insertCommunity.run(community);
+      // Insert default communities if they don't exist
+      const defaultCommunities = [
+        ['philosophy', 'Discuss philosophical topics and ideas'],
+        ['technology', 'Share and learn about the latest in tech'],
+        ['community', 'Community building and social discourse'],
+        ['science', 'Scientific discoveries and discussions'],
+        ['art', 'Share and appreciate art in all forms'],
+        ['law', 'Legal discussions and advice'],
+        ['medicine', 'Medical discussions and health advice'],
+        ['education', 'Topics related to learning and teaching'],
+        ['gaming', 'Discussions about gaming'],
+      ];
+      
+      const insertCommunity = db.prepare('INSERT OR IGNORE INTO communities (name, description) VALUES (?, ?)');
+      defaultCommunities.forEach(community => {
+        insertCommunity.run(community);
+      });
+      insertCommunity.finalize();
     });
-    insertCommunity.finalize();
   }
 });
 
-// API Routes
-// Search API Routes
-// Search for posts
-app.get('/api/search/posts', (req, res) => {
-  const query = req.query.q;
-  
-  if (!query || query.trim() === '') {
-    return res.json([]);
-  }
-  
-  const searchTerm = `%${query}%`;
-  
-  db.all(
-    `SELECT id, title, community 
-     FROM posts 
-     WHERE title LIKE ? OR content LIKE ? 
-     ORDER BY created_at DESC 
-     LIMIT 10`,
-    [searchTerm, searchTerm],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json(rows);
-    }
-  );
-});
-
-// Search for communities
-app.get('/api/search/communities', (req, res) => {
-  const query = req.query.q;
-  
-  if (!query || query.trim() === '') {
-    return res.json([]);
-  }
-  
-  const searchTerm = `%${query}%`;
-  
-  db.all(
-    `SELECT name, description 
-     FROM communities 
-     WHERE name LIKE ? OR description LIKE ? 
-     ORDER BY name ASC 
-     LIMIT 10`,
-    [searchTerm, searchTerm],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json(rows);
-    }
-  );
-});
-
-// Search for comments
-app.get('/api/search/comments', (req, res) => {
-  const query = req.query.q;
-  
-  if (!query || query.trim() === '') {
-    return res.json([]);
-  }
-  
-  const searchTerm = `%${query}%`;
-  
-  db.all(
-    `SELECT c.id, c.content, c.post_id as postId
-     FROM comments c
-     WHERE c.content LIKE ?
-     ORDER BY c.created_at DESC
-     LIMIT 10`,
-    [searchTerm],
-    (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
-      res.json(rows);
-    }
-  );
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'API is running' });
 });
 
 // Get all communities
 app.get('/api/communities', (req, res) => {
   db.all('SELECT * FROM communities ORDER BY name ASC', [], (err, rows) => {
     if (err) {
+      console.error('Error fetching communities:', err);
       res.status(500).json({ error: err.message });
       return;
     }
@@ -176,6 +113,7 @@ app.get('/api/communities', (req, res) => {
 app.get('/api/communities/:name', (req, res) => {
   db.get('SELECT * FROM communities WHERE name = ?', [req.params.name], (err, row) => {
     if (err) {
+      console.error('Error fetching community:', err);
       res.status(500).json({ error: err.message });
       return;
     }
@@ -189,15 +127,34 @@ app.get('/api/communities/:name', (req, res) => {
 
 // Get posts by community
 app.get('/api/communities/:name/posts', (req, res) => {
+  console.log(`Fetching posts for community: ${req.params.name}`);
   db.all(
     'SELECT * FROM posts WHERE community = ? ORDER BY created_at DESC',
     [req.params.name],
     (err, rows) => {
       if (err) {
+        console.error(`Error fetching posts for ${req.params.name}:`, err);
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json(rows);
+      
+      // Count comments for each post
+      const getCommentCounts = rows.map(post => {
+        return new Promise((resolve) => {
+          db.get('SELECT COUNT(*) as count FROM comments WHERE post_id = ?', [post.id], (err, result) => {
+            if (err || !result) {
+              post.comments = 0;
+            } else {
+              post.comments = result.count;
+            }
+            resolve(post);
+          });
+        });
+      });
+      
+      Promise.all(getCommentCounts).then(postsWithComments => {
+        res.json(postsWithComments);
+      });
     }
   );
 });
@@ -216,6 +173,7 @@ app.post('/api/posts', (req, res) => {
     [id, title, content, community, author],
     function(err) {
       if (err) {
+        console.error('Error creating post:', err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -236,6 +194,7 @@ app.post('/api/posts', (req, res) => {
 app.get('/api/posts/:id', (req, res) => {
   db.get('SELECT * FROM posts WHERE id = ?', [req.params.id], (err, post) => {
     if (err) {
+      console.error('Error fetching post:', err);
       res.status(500).json({ error: err.message });
       return;
     }
@@ -247,6 +206,7 @@ app.get('/api/posts/:id', (req, res) => {
     // Get comment count
     db.get('SELECT COUNT(*) as count FROM comments WHERE post_id = ?', [req.params.id], (err, result) => {
       if (err) {
+        console.error('Error counting comments:', err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -264,6 +224,7 @@ app.get('/api/posts/:id/comments', (req, res) => {
     [req.params.id],
     (err, rows) => {
       if (err) {
+        console.error('Error fetching comments:', err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -287,6 +248,7 @@ app.post('/api/posts/:id/comments', (req, res) => {
     [id, postId, content, author],
     function(err) {
       if (err) {
+        console.error('Error creating comment:', err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -322,6 +284,7 @@ app.post('/api/posts/:id/vote', (req, res) => {
       (err, vote) => {
         if (err) {
           db.run('ROLLBACK');
+          console.error('Error checking vote:', err);
           res.status(500).json({ error: err.message });
           return;
         }
@@ -358,6 +321,7 @@ app.post('/api/posts/:id/vote', (req, res) => {
           function(err) {
             if (err) {
               db.run('ROLLBACK');
+              console.error('Error updating post votes:', err);
               res.status(500).json({ error: err.message });
               return;
             }
@@ -368,6 +332,7 @@ app.post('/api/posts/:id/vote', (req, res) => {
               (err, post) => {
                 if (err) {
                   db.run('ROLLBACK');
+                  console.error('Error fetching updated post:', err);
                   res.status(500).json({ error: err.message });
                   return;
                 }
@@ -404,6 +369,7 @@ app.post('/api/communities', (req, res) => {
   // Check if community already exists
   db.get('SELECT * FROM communities WHERE name = ?', [name], (err, row) => {
     if (err) {
+      console.error('Error checking community:', err);
       res.status(500).json({ error: err.message });
       return;
     }
@@ -419,6 +385,7 @@ app.post('/api/communities', (req, res) => {
       [name, description || `Discussions about ${name}`],
       function(err) {
         if (err) {
+          console.error('Error creating community:', err);
           res.status(500).json({ error: err.message });
           return;
         }
@@ -433,10 +400,96 @@ app.post('/api/communities', (req, res) => {
   });
 });
 
+// Search API Routes
+// Search for posts
+app.get('/api/search/posts', (req, res) => {
+  const query = req.query.q;
+  
+  if (!query || query.trim() === '') {
+    return res.json([]);
+  }
+  
+  const searchTerm = `%${query}%`;
+  
+  db.all(
+    `SELECT id, title, community 
+     FROM posts 
+     WHERE title LIKE ? OR content LIKE ? 
+     ORDER BY created_at DESC 
+     LIMIT 10`,
+    [searchTerm, searchTerm],
+    (err, rows) => {
+      if (err) {
+        console.error('Error searching posts:', err);
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
+// Search for communities
+app.get('/api/search/communities', (req, res) => {
+  const query = req.query.q;
+  
+  if (!query || query.trim() === '') {
+    return res.json([]);
+  }
+  
+  const searchTerm = `%${query}%`;
+  
+  db.all(
+    `SELECT name, description 
+     FROM communities 
+     WHERE name LIKE ? OR description LIKE ? 
+     ORDER BY name ASC 
+     LIMIT 10`,
+    [searchTerm, searchTerm],
+    (err, rows) => {
+      if (err) {
+        console.error('Error searching communities:', err);
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
+// Search for comments
+app.get('/api/search/comments', (req, res) => {
+  const query = req.query.q;
+  
+  if (!query || query.trim() === '') {
+    return res.json([]);
+  }
+  
+  const searchTerm = `%${query}%`;
+  
+  db.all(
+    `SELECT c.id, c.content, c.post_id as postId
+     FROM comments c
+     WHERE c.content LIKE ?
+     ORDER BY c.created_at DESC
+     LIMIT 10`,
+    [searchTerm],
+    (err, rows) => {
+      if (err) {
+        console.error('Error searching comments:', err);
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
 // Serve static files from the 'dist' directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Serve React app for all other routes - this must come AFTER all API routes
+// Important: This route must come AFTER all API routes
+// Handle all other routes by serving the React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });

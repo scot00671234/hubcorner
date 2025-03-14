@@ -5,6 +5,8 @@ import { PostCard } from "@/components/post/PostCard";
 import { CreatePostDialog } from "@/components/post/CreatePostDialog";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export interface Post {
   title: string;
@@ -29,9 +31,10 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
   const { communityName } = useParams();
   const navigate = useNavigate();
   const [communityPosts, setCommunityPosts] = useState<FullPost[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const [retryCount, setRetryCount] = useState(0);
 
   // Function to fetch posts from API
   const fetchPostsFromApi = async () => {
@@ -41,52 +44,36 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
       setLoading(true);
       const response = await fetch(`/api/communities/${communityName}/posts`);
       
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API error (${response.status}): ${errorText}`);
+        throw new Error(`API returned status ${response.status}`);
+      }
+      
       // Check if the response is JSON
       const contentType = response.headers.get('content-type');
-      if (!response.ok || !contentType || !contentType.includes('application/json')) {
-        throw new Error('Failed to fetch posts from API');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('API response is not JSON');
       }
       
       const data = await response.json();
       return data;
     } catch (err) {
       console.error(`Error fetching ${communityName} posts:`, err);
-      setError(err instanceof Error ? err.message : 'Failed to load posts');
-      toast({
-        title: "Failed to load posts",
-        description: "Using locally stored posts instead",
-        variant: "destructive"
-      });
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load posts';
+      setError(errorMessage);
+      
+      // Only show toast after multiple retries
+      if (retryCount > 1) {
+        toast({
+          title: "Failed to load posts from server",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
       return [];
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Function to get posts from localStorage
-  const getPostsFromLocalStorage = () => {
-    if (!communityName) return [];
-    
-    const storedPosts = localStorage.getItem('posts');
-    if (!storedPosts) return [];
-    
-    try {
-      const localPosts = JSON.parse(storedPosts);
-      return Object.values(localPosts)
-        .filter((post: any) => post.community === communityName)
-        .map((post: any) => ({
-          id: post.id,
-          title: post.title,
-          content: post.content,
-          community: post.community,
-          votes: post.votes,
-          comments: post.commentCount || post.comments || 0,
-          author: post.author,
-          userVoted: post.userVoted || null
-        }));
-    } catch (err) {
-      console.error('Error parsing localStorage posts:', err);
-      return [];
     }
   };
 
@@ -97,67 +84,29 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
       // Get posts from API
       const apiPosts = await fetchPostsFromApi();
       
-      // Get posts from localStorage
-      const localPosts = getPostsFromLocalStorage();
-      
-      // Combine posts from both sources, avoiding duplicates using post ID
-      const allPostsMap = new Map<string, FullPost>();
-      
-      // First add API posts
-      apiPosts.forEach((post: any) => {
-        allPostsMap.set(post.id, {
+      if (apiPosts.length > 0) {
+        setCommunityPosts(apiPosts.map((post: any) => ({
           id: post.id,
           title: post.title,
           content: post.content,
           community: post.community,
-          votes: post.votes,
+          votes: post.votes || 0,
           comments: post.comments || 0,
-          author: post.author,
+          author: post.author || 'anonymous',
           userVoted: post.userVoted || null
-        });
-      });
-      
-      // Then add localStorage posts (will override API posts with same ID)
-      localPosts.forEach((post: FullPost) => {
-        allPostsMap.set(post.id, post);
-      });
-      
-      // Convert map to array
-      const uniquePosts = Array.from(allPostsMap.values());
-      setCommunityPosts(uniquePosts);
+        })));
+        setError(null);
+      } else if (retryCount < 3) {
+        // Retry up to 3 times with increasing delays
+        const retryDelay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, retryDelay);
+      }
     };
 
     loadPosts();
-  }, [communityName]);
-
-  // Periodically check localStorage for updates
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (!communityName) return;
-      const localPosts = getPostsFromLocalStorage();
-      
-      // Check if local posts are different from current posts
-      const currentPostIds = new Set(communityPosts.map(post => post.id));
-      const hasNewPosts = localPosts.some(post => !currentPostIds.has(post.id));
-      
-      if (hasNewPosts) {
-        // Update the posts with new ones from localStorage
-        setCommunityPosts(prevPosts => {
-          const postsMap = new Map<string, FullPost>();
-          
-          // Add current posts to map
-          prevPosts.forEach(post => postsMap.set(post.id, post));
-          
-          // Update with local posts
-          localPosts.forEach(post => postsMap.set(post.id, post));
-          
-          return Array.from(postsMap.values());
-        });
-      }
-    }, 2000);
-
-    return () => clearInterval(intervalId);
-  }, [communityName, communityPosts]);
+  }, [communityName, retryCount]);
 
   const handlePostClick = (postId: string) => {
     navigate(`/post/${postId}`);
@@ -171,6 +120,12 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
     
     // Call the parent onPostCreated function
     onPostCreated(post);
+  };
+
+  const handleRetry = () => {
+    setRetryCount(0);
+    setError(null);
+    setLoading(true);
   };
 
   return (
@@ -193,10 +148,19 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
         )}
         
         {error && !loading && communityPosts.length === 0 && (
-          <div className="text-center py-6 text-red-500">
-            <p>Error loading posts: {error}</p>
-            <p className="text-gray-500 mt-2">Try refreshing the page</p>
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              <p>Failed to load posts from server: {error}</p>
+              <button 
+                onClick={handleRetry}
+                className="mt-2 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Retry
+              </button>
+            </AlertDescription>
+          </Alert>
         )}
         
         {!loading && communityPosts.length > 0 && (
