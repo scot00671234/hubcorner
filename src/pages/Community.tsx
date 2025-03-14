@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { config } from "@/config";
 
 export interface Post {
   title: string;
@@ -42,7 +43,8 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
     
     try {
       setLoading(true);
-      const response = await fetch(`/api/communities/${communityName}/posts`);
+      console.log(`Fetching posts from: ${config.API_BASE_URL}/communities/${communityName}/posts`);
+      const response = await fetch(`${config.API_BASE_URL}/communities/${communityName}/posts`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -53,6 +55,7 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
       // Check if the response is JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
+        console.error('Non-JSON response:', await response.text());
         throw new Error('API response is not JSON');
       }
       
@@ -67,7 +70,7 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
       if (retryCount > 1) {
         toast({
           title: "Failed to load posts from server",
-          description: errorMessage,
+          description: `${errorMessage}. Please check your network connection and server status.`,
           variant: "destructive"
         });
       }
@@ -84,7 +87,7 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
       // Get posts from API
       const apiPosts = await fetchPostsFromApi();
       
-      if (apiPosts.length > 0) {
+      if (apiPosts && apiPosts.length > 0) {
         setCommunityPosts(apiPosts.map((post: any) => ({
           id: post.id,
           title: post.title,

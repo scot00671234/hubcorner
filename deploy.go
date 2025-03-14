@@ -32,6 +32,18 @@ func main() {
 	} else {
 		fmt.Println("✅ Data directory permissions set")
 	}
+	
+	// Verify data directory is writable
+	testFile := filepath.Join(dataDir, ".test_write")
+	f, err := os.Create(testFile)
+	if err != nil {
+		log.Printf("Warning: Data directory is not writable: %v", err)
+		log.Printf("Please check permissions and ownership of %s", dataDir)
+	} else {
+		f.Close()
+		os.Remove(testFile)
+		fmt.Println("✅ Data directory is writable")
+	}
 
 	steps := []struct {
 		name    string

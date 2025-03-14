@@ -19,6 +19,7 @@ app.use(bodyParser.json());
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
+  console.log(`Created data directory at ${dataDir}`);
 }
 
 // Initialize SQLite database
@@ -88,9 +89,14 @@ const db = new sqlite3.Database(config.DB_PATH, (err) => {
         insertCommunity.run(community);
       });
       insertCommunity.finalize();
+      
+      console.log('Database schema initialized with default communities');
     });
   }
 });
+
+// API Routes - all API routes should be defined BEFORE the static file middleware
+// ==============================================================================
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -99,18 +105,21 @@ app.get('/api/health', (req, res) => {
 
 // Get all communities
 app.get('/api/communities', (req, res) => {
+  console.log('GET /api/communities - Fetching all communities');
   db.all('SELECT * FROM communities ORDER BY name ASC', [], (err, rows) => {
     if (err) {
       console.error('Error fetching communities:', err);
       res.status(500).json({ error: err.message });
       return;
     }
+    console.log(`Returning ${rows.length} communities`);
     res.json(rows);
   });
 });
 
 // Get a specific community
 app.get('/api/communities/:name', (req, res) => {
+  console.log(`GET /api/communities/${req.params.name} - Fetching community details`);
   db.get('SELECT * FROM communities WHERE name = ?', [req.params.name], (err, row) => {
     if (err) {
       console.error('Error fetching community:', err);
@@ -118,6 +127,7 @@ app.get('/api/communities/:name', (req, res) => {
       return;
     }
     if (!row) {
+      console.log(`Community '${req.params.name}' not found`);
       res.status(404).json({ error: 'Community not found' });
       return;
     }
@@ -127,7 +137,7 @@ app.get('/api/communities/:name', (req, res) => {
 
 // Get posts by community
 app.get('/api/communities/:name/posts', (req, res) => {
-  console.log(`Fetching posts for community: ${req.params.name}`);
+  console.log(`GET /api/communities/${req.params.name}/posts - Fetching posts for community`);
   db.all(
     'SELECT * FROM posts WHERE community = ? ORDER BY created_at DESC',
     [req.params.name],
@@ -153,6 +163,7 @@ app.get('/api/communities/:name/posts', (req, res) => {
       });
       
       Promise.all(getCommentCounts).then(postsWithComments => {
+        console.log(`Returning ${postsWithComments.length} posts for ${req.params.name}`);
         res.json(postsWithComments);
       });
     }
@@ -486,11 +497,13 @@ app.get('/api/search/comments', (req, res) => {
 });
 
 // Serve static files from the 'dist' directory
+// Important: This middleware must come AFTER all API routes
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Important: This route must come AFTER all API routes
 // Handle all other routes by serving the React app
+// This should be the LAST route
 app.get('*', (req, res) => {
+  console.log(`GET ${req.path} - Serving React app`);
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
@@ -498,6 +511,7 @@ app.get('*', (req, res) => {
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Access your application at http://localhost:${PORT}`);
+  console.log(`API endpoints available at http://localhost:${PORT}/api/`);
 });
 
 // Handle server errors
