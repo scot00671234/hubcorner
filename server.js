@@ -11,18 +11,21 @@ const fs = require('fs');
 const app = express();
 const PORT = config.PORT || 3000;
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
-}));
-app.use(bodyParser.json());
-
-// Request logging middleware
+// Enhanced request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
+
+// CORS middleware - accept requests from any origin in development
+app.use(cors({
+  origin: isProduction => isProduction 
+    ? [config.API_BASE_URL, 'https://hubcorner.xyz'] 
+    : '*',
+  credentials: true
+}));
+
+app.use(bodyParser.json());
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');

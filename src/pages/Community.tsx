@@ -1,10 +1,10 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { PostCard } from "@/components/post/PostCard";
 import { CreatePostDialog } from "@/components/post/CreatePostDialog";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { config } from "@/config";
@@ -34,7 +34,7 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
   const [communityPosts, setCommunityPosts] = useState<FullPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const [retryCount, setRetryCount] = useState(0);
 
   // Function to fetch posts from API
@@ -46,7 +46,12 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
       const url = `${config.API_BASE_URL}/communities/${communityName}/posts`;
       console.log(`Fetching posts from: ${url}`);
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -68,14 +73,9 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load posts';
       setError(errorMessage);
       
-      // Only show toast after multiple retries
-      if (retryCount > 1) {
-        toast({
-          title: "Failed to load posts from server",
-          description: `${errorMessage}. Please check your network connection and server status.`,
-          variant: "destructive"
-        });
-      }
+      // Show toast and console with detailed error
+      toast.error(`Network error: ${errorMessage}`);
+      
       return [];
     } finally {
       setLoading(false);
@@ -86,7 +86,19 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
     if (!communityName) return;
 
     const loadPosts = async () => {
-      // Get posts from API
+      // Try loading from props first (global state)
+      if (posts[communityName]?.length > 0) {
+        const postsWithIds = posts[communityName].map((post, index) => ({
+          ...post,
+          id: `${Date.now()}-${index}`,
+          author: 'anonymous'
+        }));
+        setCommunityPosts(postsWithIds);
+        setLoading(false);
+        return;
+      }
+      
+      // Otherwise get posts from API
       const apiPosts = await fetchPostsFromApi();
       
       if (apiPosts && apiPosts.length > 0) {
@@ -111,7 +123,7 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
     };
 
     loadPosts();
-  }, [communityName, retryCount]);
+  }, [communityName, retryCount, posts]);
 
   const handlePostClick = (postId: string) => {
     navigate(`/post/${postId}`);

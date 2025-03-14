@@ -16,6 +16,8 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 60 * 1000, // 1 minute
+      retry: 3,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
   },
 });
@@ -34,8 +36,9 @@ const App = () => {
   useEffect(() => {
     const fetchCommunityPosts = async (community: string) => {
       try {
-        console.log(`Fetching posts from: ${config.API_BASE_URL}/communities/${community}/posts`);
-        const response = await fetch(`${config.API_BASE_URL}/communities/${community}/posts`);
+        const url = `${config.API_BASE_URL}/communities/${community}/posts`;
+        console.log(`Fetching posts from: ${url}`);
+        const response = await fetch(url);
         
         if (!response.ok) {
           console.error(`Failed to fetch posts for ${community}: ${response.status} ${response.statusText}`);
@@ -49,7 +52,7 @@ const App = () => {
           title: post.title,
           content: post.content,
           community: post.community,
-          votes: post.votes,
+          votes: post.votes || 0,
           comments: post.comments || 0
         }));
         

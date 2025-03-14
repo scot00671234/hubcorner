@@ -37,5 +37,8 @@ module.exports = {
   API_BASE_URL: '/api',
   
   // Enable debug logging in development
-  DEBUG: !isProduction
+  DEBUG: !isProduction,
+  
+  // App version for the systemd service
+  APP_VERSION: '1.0.0'
 };
