@@ -6,6 +6,23 @@
 
 echo "Setting up Hub Corner as a systemd service..."
 
+# Create a dedicated user for security reasons if it doesn't exist
+if ! id -u hubcorner > /dev/null 2>&1; then
+  echo "Creating hubcorner user..."
+  sudo useradd -r -s /bin/false hubcorner
+fi
+
+# Create application directory
+sudo mkdir -p /opt/hubcorner
+sudo mkdir -p /opt/hubcorner/data
+
+# Copy the built Go binary to the application directory
+sudo cp ./hubcorner /opt/hubcorner/
+
+# Ensure proper permissions
+sudo chown -R hubcorner:hubcorner /opt/hubcorner
+sudo chmod +x /opt/hubcorner/hubcorner
+
 # Copy the service file to systemd directory
 sudo cp hubcorner.service /etc/systemd/system/
 

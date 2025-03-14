@@ -4,10 +4,10 @@ Description=Hub Corner Community Platform
 After=network.target
 
 [Service]
-WorkingDirectory=/root/hub-corner
-ExecStart=/usr/bin/node start.js
-User=root
-Group=root
+WorkingDirectory=/opt/hubcorner
+ExecStart=/opt/hubcorner/hubcorner
+User=hubcorner
+Group=hubcorner
 Restart=always
 RestartSec=10
 StandardOutput=syslog
