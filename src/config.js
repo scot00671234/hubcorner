@@ -5,6 +5,9 @@ const fs = require('fs');
 // Determine if we're in production
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Get application port from environment or use default
+const PORT = process.env.PORT || 3000;
+
 // Ensure data directory exists with absolute path
 const dataDir = path.resolve(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) {
@@ -25,7 +28,7 @@ try {
 
 module.exports = {
   // Use environment variable for port or default to 3000
-  PORT: process.env.PORT || 3000,
+  PORT,
   
   // Database path - store in data directory with absolute path
   DB_PATH: path.join(dataDir, 'hubcorner.sqlite3'),

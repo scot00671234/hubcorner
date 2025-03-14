@@ -43,8 +43,10 @@ const Community = ({ posts, onPostCreated }: CommunityProps) => {
     
     try {
       setLoading(true);
-      console.log(`Fetching posts from: ${config.API_BASE_URL}/communities/${communityName}/posts`);
-      const response = await fetch(`${config.API_BASE_URL}/communities/${communityName}/posts`);
+      const url = `${config.API_BASE_URL}/communities/${communityName}/posts`;
+      console.log(`Fetching posts from: ${url}`);
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         const errorText = await response.text();

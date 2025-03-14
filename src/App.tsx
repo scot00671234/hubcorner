@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { config } from "./config";
 import Index from "./pages/Index";
 import Community from "./pages/Community";
 import Post from "./pages/Post";
@@ -33,10 +34,11 @@ const App = () => {
   useEffect(() => {
     const fetchCommunityPosts = async (community: string) => {
       try {
-        const response = await fetch(`/api/communities/${community}/posts`);
+        console.log(`Fetching posts from: ${config.API_BASE_URL}/communities/${community}/posts`);
+        const response = await fetch(`${config.API_BASE_URL}/communities/${community}/posts`);
         
         if (!response.ok) {
-          console.error(`Failed to fetch posts for ${community}`);
+          console.error(`Failed to fetch posts for ${community}: ${response.status} ${response.statusText}`);
           return;
         }
         
@@ -48,7 +50,7 @@ const App = () => {
           content: post.content,
           community: post.community,
           votes: post.votes,
-          comments: 0 // This will be loaded separately when viewing the post
+          comments: post.comments || 0
         }));
         
         setPosts(prevPosts => ({

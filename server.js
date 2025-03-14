@@ -12,8 +12,17 @@ const app = express();
 const PORT = config.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(bodyParser.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
@@ -497,7 +506,6 @@ app.get('/api/search/comments', (req, res) => {
 });
 
 // Serve static files from the 'dist' directory
-// Important: This middleware must come AFTER all API routes
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // Handle all other routes by serving the React app
