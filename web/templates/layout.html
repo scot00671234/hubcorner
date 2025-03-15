@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/js/main.js" defer></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">HubCorner</a>
+                <nav>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/communities">Communities</a></li>
+                        <li><a href="/posts/new" class="btn btn-primary">Create Post</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="content-wrapper">
+            <div class="main-content">
+                {{ template "content" . }}
+            </div>
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>About HubCorner</h3>
+                    <p>A simple Reddit-like platform for sharing and discussing content in communities.</p>
+                    <a href="/communities/new" class="btn btn-secondary">Create Community</a>
+                </div>
+                
+                {{ if .Communities }}
+                <div class="sidebar-section">
+                    <h3>Communities</h3>
+                    <ul class="community-list">
+                        {{ range .Communities }}
+                        <li>
+                            <a href="/c/{{ .name }}">c/{{ .name }}</a>
+                            <span class="post-count">{{ .post_count }} posts</span>
+                        </li>
+                        {{ end }}
+                    </ul>
+                </div>
+                {{ end }}
+            </aside>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; {{ .CurrentYear }} HubCorner. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
+
+{{ define "error" }}
+<div class="error-message">
+    {{ . }}
+</div>
+{{ end }}
+
+{{ define "success" }}
+<div class="success-message">
+    {{ . }}
+</div>
+{{ end }}

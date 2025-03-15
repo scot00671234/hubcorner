@@ -1,0 +1,40 @@
+{{ define "content" }}
+<div class="page-header">
+    <h1>{{ .Title }}</h1>
+    <a href="/posts/new?community_id={{ .CommunityID }}" class="btn btn-primary">Create Post in c/{{ .CommunityName }}</a>
+</div>
+
+<div class="community-info">
+    <p class="community-description">{{ .Description }}</p>
+</div>
+
+{{ if .Posts }}
+<div class="posts-container">
+    {{ range .Posts }}
+    <div class="post-card">
+        <div class="vote-controls">
+            <button class="vote-btn upvote" data-post-id="{{ .id }}" data-vote-type="1">▲</button>
+            <span class="vote-score">{{ .score }}</span>
+            <button class="vote-btn downvote" data-post-id="{{ .id }}" data-vote-type="-1">▼</button>
+        </div>
+        <div class="post-content">
+            <h2 class="post-title"><a href="/posts/{{ .id }}">{{ .title }}</a></h2>
+            <div class="post-meta">
+                <span class="post-time">Posted {{ .created_at }}</span>
+            </div>
+            <div class="post-text">{{ .content }}</div>
+            <div class="post-footer">
+                <a href="/posts/{{ .id }}" class="comment-link">
+                    <span class="comment-count">{{ .comment_count }} comments</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    {{ end }}
+</div>
+{{ else }}
+<div class="empty-state">
+    <p>No posts in this community yet! Be the first to <a href="/posts/new?community_id={{ .CommunityID }}">create a post</a>.</p>
+</div>
+{{ end }}
+{{ end }}

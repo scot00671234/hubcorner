@@ -1,0 +1,25 @@
+{{ define "content" }}
+<div class="page-header">
+    <h1>{{ .Title }}</h1>
+    <a href="/communities/new" class="btn btn-primary">Create Community</a>
+</div>
+
+{{ if .Communities }}
+<div class="communities-container">
+    {{ range .Communities }}
+    <div class="community-card">
+        <h2 class="community-name"><a href="/c/{{ .name }}">c/{{ .name }}</a></h2>
+        <p class="community-description">{{ .description }}</p>
+        <div class="community-meta">
+            <span class="post-count">{{ .post_count }} posts</span>
+            <span class="created-at">Created {{ .created_at }}</span>
+        </div>
+    </div>
+    {{ end }}
+</div>
+{{ else }}
+<div class="empty-state">
+    <p>No communities yet! Be the first to <a href="/communities/new">create a community</a>.</p>
+</div>
+{{ end }}
+{{ end }}

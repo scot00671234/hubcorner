@@ -1,0 +1,31 @@
+{{ define "content" }}
+<div class="page-header">
+    <h1>{{ .Title }}</h1>
+</div>
+
+<div class="form-container">
+    <form action="/posts/create" method="POST">
+        <div class="form-group">
+            <label for="title">Post Title</label>
+            <input type="text" id="title" name="title" required placeholder="Enter post title">
+        </div>
+        <div class="form-group">
+            <label for="content">Content</label>
+            <textarea id="content" name="content" rows="6" placeholder="Write your post content here"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="community_id">Community</label>
+            <select id="community_id" name="community_id" required>
+                <option value="">Select a community</option>
+                {{ range .Communities }}
+                <option value="{{ .id }}" {{ if eq $.CommunityID (printf "%d" .id) }}selected{{ end }}>c/{{ .name }}</option>
+                {{ end }}
+            </select>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Post</button>
+            <a href="/" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{{ end }}

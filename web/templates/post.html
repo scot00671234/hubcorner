@@ -1,0 +1,88 @@
+{{ define "content" }}
+<div class="post-detail">
+    <div class="post-card detailed">
+        <div class="vote-controls">
+            <button class="vote-btn upvote {{ if eq (index .PostVotes .Post.id) 1 }}active{{ end }}" 
+                    data-post-id="{{ .Post.id }}" data-vote-type="1">▲</button>
+            <span class="vote-score">{{ .Post.score }}</span>
+            <button class="vote-btn downvote {{ if eq (index .PostVotes .Post.id) -1 }}active{{ end }}" 
+                    data-post-id="{{ .Post.id }}" data-vote-type="-1">▼</button>
+        </div>
+        <div class="post-content">
+            <h1 class="post-title">{{ .Post.title }}</h1>
+            <div class="post-meta">
+                <span class="community-tag"><a href="/c/{{ .Post.community_name }}">c/{{ .Post.community_name }}</a></span>
+                <span class="post-time">Posted {{ .Post.created_at }}</span>
+            </div>
+            <div class="post-text">{{ .Post.content }}</div>
+        </div>
+    </div>
+
+    <div class="comments-section">
+        <h2>Comments</h2>
+        
+        <div class="comment-form-container">
+            <form action="/comments/create" method="POST" class="comment-form">
+                <input type="hidden" name="post_id" value="{{ .Post.id }}">
+                <div class="form-group">
+                    <textarea name="content" rows="3" placeholder="Write a comment..." required></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Add Comment</button>
+                </div>
+            </form>
+        </div>
+
+        {{ if .Comments }}
+        <div class="comments-container">
+            {{ template "comments" dict "Comments" .Comments "CommentVotes" .CommentVotes "PostID" .Post.id }}
+        </div>
+        {{ else }}
+        <div class="empty-state">
+            <p>No comments yet. Be the first to comment!</p>
+        </div>
+        {{ end }}
+    </div>
+</div>
+{{ end }}
+
+{{ define "comments" }}
+    {{ range .Comments }}
+    <div class="comment" id="comment-{{ .id }}">
+        <div class="vote-controls">
+            <button class="vote-btn upvote {{ if eq (index $.CommentVotes .id) 1 }}active{{ end }}" 
+                    data-comment-id="{{ .id }}" data-vote-type="1">▲</button>
+            <span class="vote-score">{{ .score }}</span>
+            <button class="vote-btn downvote {{ if eq (index $.CommentVotes .id) -1 }}active{{ end }}" 
+                    data-comment-id="{{ .id }}" data-vote-type="-1">▼</button>
+        </div>
+        <div class="comment-content">
+            <div class="comment-text">{{ .content }}</div>
+            <div class="comment-meta">
+                <span class="comment-time">Posted {{ .created_at }}</span>
+                <button class="reply-btn" data-comment-id="{{ .id }}">Reply</button>
+            </div>
+            
+            <div class="reply-form-container" id="reply-form-{{ .id }}" style="display: none;">
+                <form action="/comments/create" method="POST" class="comment-form">
+                    <input type="hidden" name="post_id" value="{{ $.PostID }}">
+                    <input type="hidden" name="parent_id" value="{{ .id }}">
+                    <div class="form-group">
+                        <textarea name="content" rows="2" placeholder="Write a reply..." required></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Reply</button>
+                        <button type="button" class="btn btn-secondary cancel-reply" data-comment-id="{{ .id }}">Cancel</button>
+                    </div>
+                </form>
+            </div>
+            
+            {{ if .replies }}
+            <div class="replies">
+                {{ template "comments" dict "Comments" .replies "CommentVotes" $.CommentVotes "PostID" $.PostID }}
+            </div>
+            {{ end }}
+        </div>
+    </div>
+    {{ end }}
+{{ end }}
